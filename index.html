@@ -14212,7 +14212,7 @@ tr:hover .run-icon,
   line-height:1.3;
 }
 
-/* 지금 시각: 표 위에 떠 있는 주황색 2px 줄(11-run-plan.js가 위치를 정함) */
+/* 지금 시각: 표 위에 떠 있는 빨간색 2px 줄(11-run-plan.js가 위치를 정함) */
 
 .run-sheet {
   position:relative;
@@ -14226,7 +14226,6 @@ tr:hover .run-icon,
   height:2px;
   background:var(--c-sequence-now);
   pointer-events:none;
-  will-change:transform;
 }
 
 @media(prefers-reduced-motion:reduce) {
@@ -14627,7 +14626,6 @@ from {
 .run-now-line.is-drag {
   height:3px;
   background:var(--c-sequence-now-strong);
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--c-sequence-now-strong) 25%,transparent);
 }
 
 .run-now-line.is-drag .run-now-time {
@@ -15189,14 +15187,19 @@ Sample A_3</pre></div>
   <div class="run-side"><div class="run-card"><h3>Method</h3><div data-method-body>${methodHtml()}</div></div></div></div></section>`;bind();update.reveal=true;update();/* 칸이 접히거나 화면 폭이 바뀌어 표 크기가 달라지면 빨간 선·지난 시간 회색 영역 길이와 위치를 다시 맞춘다 */runAlignSide(host);sheetWatch?.disconnect();const table=host.querySelector('.run-table');if(table&&window.ResizeObserver){let last=table.offsetWidth+'x'+table.offsetHeight;sheetWatch=new ResizeObserver(()=>{const size=table.offsetWidth+'x'+table.offsetHeight;if(size===last||!host.isConnected)return;last=size;markNow()});sheetWatch.observe(table)}}
  /* 지금 시각: 표 위에 떠 있는 주황색 줄 하나. 처음 열 때는 표 맨 위에서 현재 위치로 스르륵 내려오고, 이후에는 직전 위치에서 이어서 움직인다. */
  let nowY=null,sheetWatch=null;
+ // 얇은 선의 경계가 물리 픽셀 중간에 걸려 표 배경색과 섞이지 않도록 맞춘다.
+ function placeNowLine(line,sheet,y){const scale=window.devicePixelRatio||1,top=sheet.getBoundingClientRect().top;
+  const snapped=Math.round((top+y)*scale)/scale-top;
+  line.style.transform=`translateY(${snapped}px)`;
+ }
  function markNow(r=runCompute(plan)){const sheet=host.querySelector('.run-sheet'),line=host.querySelector('.run-now-line');if(!sheet||!line)return;const now=Date.now(),byId=new Map(r.rows.map(x=>[x.id,x]));let target=null;
   host.querySelectorAll('[data-row]').forEach(tr=>{const x=byId.get(tr.dataset.row),on=!!x&&x.begin!=null&&x.end>x.begin&&now>=x.begin&&now<x.end;tr.classList.toggle('is-now',on);if(on){const box=tr.getBoundingClientRect(),top=sheet.getBoundingClientRect().top;target=box.top-top+sheet.scrollTop+(now-x.begin)/(x.end-x.begin)*box.height}});
   const table=host.querySelector('.run-table'),head=table.querySelector('thead')?.getBoundingClientRect().height||0,past=host.querySelector('.run-past'),lastEnd=r.rows.at(-1)?.end;
   /* 이미 끝난 주입(줄 위쪽)은 얇은 회색 유리로 덮는다. */
   if(past){past.style.width=table.offsetWidth+'px';past.style.top=head+'px';const h=target!==null?target-head:(lastEnd!=null&&now>=lastEnd?table.offsetHeight-head:0);requestAnimationFrame(()=>{past.style.height=Math.max(0,h)+'px'})}
   if(target===null){line.hidden=true;return}line.style.width=table.offsetWidth+'px';if(!line.classList.contains('is-drag'))line.querySelector('.run-now-time').textContent=line.classList.contains('is-hover')?runClock(now):'NOW';
-  if(line.hidden||line.dataset.placed!=='true'){line.hidden=false;line.dataset.placed='true';line.style.transition='none';line.style.transform=`translateY(${nowY??head}px)`;line.getBoundingClientRect();line.style.transition=''}
-  nowY=target;if(line.classList.contains('is-drag'))return;requestAnimationFrame(()=>{line.style.transform=`translateY(${target}px)`})}
+  if(line.hidden||line.dataset.placed!=='true'){line.hidden=false;line.dataset.placed='true';line.style.transition='none';placeNowLine(line,sheet,nowY??head);line.getBoundingClientRect();line.style.transition=''}
+  nowY=target;if(line.classList.contains('is-drag'))return;requestAnimationFrame(()=>{placeNowLine(line,sheet,target)})}
  function update(){const r=runCompute(plan),byId=new Map(r.rows.map(x=>[x.id,x]));requestAnimationFrame(()=>markNow(r));
   host.querySelectorAll('[data-row]').forEach(tr=>{const x=byId.get(tr.dataset.row),row=plan.rows.find(y=>y.id===tr.dataset.row);if(!x)return;tr.querySelector('[data-run-index]').textContent=x.eq?'EQ':x.count>1?`${x.index}–${x.index+x.count-1}`:x.index;const day=ms=>ms==null||!r.startDay?0:Math.floor((new Date(ms).setHours(0,0,0,0)-r.startDay)/864e5)%2;const begin=tr.querySelector('[data-run-begin]'),end=tr.querySelector('[data-run-end]');begin.textContent=runClock(x.begin);end.textContent=runClock(x.end);begin.classList.toggle('is-alt-day',day(x.begin)===1);end.classList.toggle('is-alt-day',day(x.end)===1);tr.classList.toggle('is-checked',!!row?.check);tr.querySelector('[data-field=method]').closest('td').classList.toggle('is-unknown',!x.known)});
   host.querySelector('[data-run-summary]').innerHTML=`<dl class="run-kv"><dt>분석 시작</dt><dd>${runStamp(r.rows[0]?.begin)}</dd><dt>분석 종료</dt><dd>${runStamp(r.end)}</dd><dt>총 주입</dt><dd>${r.total}회</dd><dt>소요 시간</dt><dd>${runSpan(r.minutes)}</dd></dl>`;
@@ -15241,10 +15244,10 @@ Sample A_3</pre></div>
   const timeAt=y=>{const r=runCompute(plan),byId=new Map(r.rows.map(x=>[x.id,x])),top=sheet.getBoundingClientRect().top-sheet.scrollTop;for(const tr of host.querySelectorAll('[data-row]')){const x=byId.get(tr.dataset.row),box=tr.getBoundingClientRect(),a=box.top-top,b=a+box.height;if(x?.begin==null||x.end==null||y<a||y>b)continue;return x.begin+(y-a)/Math.max(1,box.height)*(x.end-x.begin)}return null};
   const stamp=ms=>{if(ms==null)return '—';const d=new Date(ms),today=new Date();return d.toDateString()===today.toDateString()?runClock(ms):`${runPad(d.getMonth()+1)}.${runPad(d.getDate())} ${runClock(ms)}`};
   const grip=nowLine.querySelector('.run-now-grip');
-  const dragTo=e=>{const table=host.querySelector('.run-table'),head=table.querySelector('thead').getBoundingClientRect().height,y=Math.max(head,Math.min(table.offsetHeight,e.clientY-sheet.getBoundingClientRect().top+sheet.scrollTop));nowLine.style.transform=`translateY(${y}px)`;nowTag.textContent=stamp(timeAt(y));const past=host.querySelector('.run-past');if(past){past.style.transition='none';past.style.height=Math.max(0,y-head)+'px'}};
+  const dragTo=e=>{const table=host.querySelector('.run-table'),head=table.querySelector('thead').getBoundingClientRect().height,y=Math.max(head,Math.min(table.offsetHeight,e.clientY-sheet.getBoundingClientRect().top+sheet.scrollTop));placeNowLine(nowLine,sheet,y);nowTag.textContent=stamp(timeAt(y));const past=host.querySelector('.run-past');if(past){past.style.transition='none';past.style.height=Math.max(0,y-head)+'px'}};
   for(const el of [grip,nowTag]){el.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();el.setPointerCapture(e.pointerId);nowLine.classList.remove('is-hover');nowLine.classList.add('is-drag');nowLine.style.transition='none';dragTo(e)});
    el.addEventListener('pointermove',e=>{if(nowLine.classList.contains('is-drag'))dragTo(e)});
-   const drop=()=>{if(!nowLine.classList.contains('is-drag'))return;nowLine.classList.remove('is-drag');nowLine.style.transition='';nowTag.textContent='NOW';const past=host.querySelector('.run-past');if(past)past.style.transition='';if(nowY!=null)nowLine.style.transform=`translateY(${nowY}px)`;markNow()};
+   const drop=()=>{if(!nowLine.classList.contains('is-drag'))return;nowLine.classList.remove('is-drag');nowLine.style.transition='';nowTag.textContent='NOW';const past=host.querySelector('.run-past');if(past)past.style.transition='';if(nowY!=null)placeNowLine(nowLine,sheet,nowY);markNow()};
    el.addEventListener('pointerup',drop);el.addEventListener('pointercancel',drop)}
   bindMethod()}
  function drawMethod(reveal=true){host.querySelector('[data-method-body]').innerHTML=methodHtml();bindMethod();update.reveal=reveal;update()}
