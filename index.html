@@ -14850,7 +14850,7 @@ body :is(#toggleLeftPanel,#toggleRightPanel,#toggleJournalPane):is(:hover,:focus
 body.dark .run-curve-figure img {
   background:transparent;
   border-color:transparent;
-  filter:invert(1) hue-rotate(180deg);
+  filter:grayscale(1) invert(1);
   mix-blend-mode:screen;
 }
 
@@ -14926,6 +14926,8 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
 .seq-name-form{display:grid;gap:var(--sp-12)}
 .seq-name-form label{display:grid;gap:var(--sp-6);font-size:var(--fs-small)}
 #seqDialog{width:min(480px,calc(100vw - var(--sp-32)))}
+#seqDialog .actions:not(.ailab-actions-empty){display:flex;flex-wrap:wrap;gap:var(--gap-control)}
+#seqDialog .seq-feedback{margin:var(--sp-8) 0 0}
 /* 휴대폰(터치): 글자·버튼·줄 높이를 한 단계씩 작게(입력할 때 확대는 화면 설정 maximum-scale=1로 막음) */
 @media (pointer:coarse){
  :root{--fs-body:13px;--fs-small:12px;--fs-caption:11px;--fs-tiny:10px;--fs-reading:14px;--fs-card-title:14px;--fs-panel-title:15px;--fs-section-title:17px;--fs-page-title:18px;--h-control:32px;--h-control-sm:28px;--h-control-xs:24px}
@@ -14945,6 +14947,7 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
 .solo-main .run-plan-head{display:none}
 .solo-tools .btn{min-height:var(--h-control-sm);height:var(--h-control-sm);padding:0 var(--sp-12)}
 .solo-main .run-body{padding-right:0}
+.solo-main .run-side{grid-template-columns:minmax(0,1fr)}
 /* 기울기 표: 좁은 화면에서는 표만 옆으로 밀어 보기(칸 제목·숫자가 잘리지 않게) */
 .solo-main .run-grad{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .solo-main .run-grad th{white-space:nowrap}
@@ -14954,7 +14957,7 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
 /* 폭 600 이상(가로·펼친 화면)은 요약을 두 칸(노트의 900px 이하 한 칸 규칙을 덮음) */
 @container (min-width:600px){.solo-main .run-summary-bar{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.solo-main .run-sst-box{border-top:0;border-left:1px solid var(--c-line)}}
 @container (max-width:599px){.solo-main .run-summary-bar{grid-template-columns:minmax(0,1fr)}.solo-main .run-sst-box{border-left:0!important;border-top:1px solid var(--c-line)}}
-@container (max-width:999px){.solo-main .run-body{grid-template-columns:minmax(0,1fr)}.solo-main .run-main,.solo-main .run-side{min-width:0}.solo-main .run-summary-bar>*{min-width:0}.solo-main .run-toolbar,.solo-main .run-tool-group,.solo-main .run-toolbar>.run-start{flex-wrap:wrap}.solo-main .run-side{grid-template-columns:minmax(0,1fr)}.solo-main .run-grid-wrap{max-width:100%;box-sizing:border-box}}
+@container (max-width:999px){.solo-main .run-body{grid-template-columns:minmax(0,1fr)}.solo-main .run-main,.solo-main .run-side{min-width:0}.solo-main .run-summary-bar>*{min-width:0}.solo-main .run-toolbar,.solo-main .run-tool-group,.solo-main .run-toolbar>.run-start{flex-wrap:wrap}.solo-main .run-grid-wrap{max-width:100%;box-sizing:border-box}}
 /* 접은 화면 세로처럼 좁을 때: 바깥 여백·제목 줄 줄임 */
 @media (max-width:600px){.solo-main{padding-left:var(--sp-8);padding-right:var(--sp-8)}.solo-brand h1{font-size:var(--fs-card-title)}.solo-brand img{height:var(--sp-20)}}
 /* 가로로 눕혀 높이가 낮을 때(접은 가로 466·펼친 가로 626): 위 막대는 스크롤과 함께 올라가고 얇게, 안내 문구 숨김 */
@@ -15070,7 +15073,7 @@ window.RUN_PLAN_COMPACT=true;
 const KEY='ailab-sequence',LIST_KEY=KEY+'-list',CURRENT_KEY=KEY+'-current';const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
-let toastTimer=0;function toast(message){const t=document.getElementById('toast');t.textContent=message;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,2600)}
+let toastTimer=0,activeToast;function toast(message){const t=document.querySelector('#seqDialog[open] .seq-feedback')||document.getElementById('toast');if(activeToast)activeToast.hidden=true;activeToast=t;t.textContent=message;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,2600)}
 const user={id:'me',name:'나'};
 function seqList(){try{return JSON.parse(localStorage.getItem(LIST_KEY)||'[]')}catch{return []}}
 function seqWrite(list){localStorage.setItem(LIST_KEY,JSON.stringify(list))}
@@ -15307,7 +15310,7 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
  const pushCode=sub=>{const j=sub.toJSON();return 'AILAB1.'+b64(new TextEncoder().encode(JSON.stringify({e:j.endpoint,p:j.keys?.p256dh||'',a:j.keys?.auth||''})))};
  async function openPush(){dialog.querySelector('h2').textContent='알림 연동';const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
   const ready='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&location.protocol==='https:';
-  const draw=(html,actions)=>{body.innerHTML=`<div class="push-help">${html}</div><div class="actions">${actions}<button type="button" class="btn" data-close>닫기</button></div>`;body.querySelector('[data-close]').onclick=()=>dialog.close();if(!dialog.open)dialog.showModal()};
+  const draw=(html,actions)=>{body.innerHTML=`<div class="push-help">${html}</div><div class="actions">${actions}<button type="button" class="btn" data-close>닫기</button></div><p class="seq-feedback muted-copy" role="status" hidden></p>`;body.querySelector('[data-close]').onclick=()=>dialog.close();if(!dialog.open)dialog.showModal()};
   if(!ready||!standalone)return draw(`<p class="muted-copy">${!standalone?'홈 화면에 추가한 앱에서만 알림을 켤 수 있습니다. Safari 공유 → 홈 화면에 추가 후, 홈 화면의 앱으로 열어 주세요.':'이 기기에서는 알림을 쓸 수 없습니다. (iPhone은 iOS 16.4 이상)'}</p>`,'');
   const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
   const showCode=()=>{const code=pushCode(sub);draw(`<p class="muted-copy">이 휴대폰은 알림을 받을 준비가 되었습니다. 아래 코드를 회사 PC 앱허브 [내 정보] → <b>알림 연동</b>에 붙여 넣고 [등록]을 눌러 주세요.</p><textarea class="push-code" readonly rows="4">${esc(code)}</textarea><p class="muted-copy">새 알림이 생기면 "새 알림이 있습니다"만 뜹니다. 내용은 회사 PC에서 확인해 주세요.</p>`,'<button type="button" class="btn btn-primary" data-copy>코드 복사</button><button type="button" class="btn" data-off>알림 끄기</button>');
