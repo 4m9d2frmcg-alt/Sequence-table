@@ -14786,7 +14786,15 @@ body :is(#toggleLeftPanel,#toggleRightPanel,#toggleJournalPane):is(:hover,:focus
 }
 
 
+/* iPhone Safari가 가로 화면 등에서 글자를 멋대로 키우지 않게(글자 크기는 화면 규칙대로만) */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;background:var(--c-page);color:var(--c-text)}
+/* 도구 줄이 여러 줄이 될 때 '시작'도 왼쪽부터 */
+.solo-main .run-toolbar{justify-content:flex-start}
+.solo-main .run-toolbar>.run-start{margin-left:0!important}
+/* 표 제목(비고 1·2·3 등)이 잘리지 않게: 제목은 한 줄, 표가 넓으면 표만 옆으로 밀어 보기 */
+.solo-main .run-table th{white-space:nowrap}
+.solo-main .run-table{min-width:max-content}
 .solo-head{position:sticky;top:0;z-index:20;padding:calc(env(safe-area-inset-top) + var(--sp-10)) calc(env(safe-area-inset-right) + var(--sp-16)) var(--sp-10) calc(env(safe-area-inset-left) + var(--sp-16));background:var(--c-card);border-bottom:1px solid var(--c-line)}
 /* 제목 줄: 원래 앱처럼 회사 로고 + 바이오의약본부 + 앱 이름. 오른쪽 위(카메라 자리)에는 버튼을 두지 않는다 */
 .solo-brand{display:flex;align-items:center;gap:var(--sp-12);flex-wrap:wrap}
