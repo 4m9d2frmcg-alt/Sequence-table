@@ -15438,6 +15438,10 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
 .solo-current{flex-basis:100%;font-size:var(--fs-small);color:var(--c-text-sub);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .solo-current b{color:var(--c-text);font-weight:var(--fw-strong)}
 .seq-list{display:grid;gap:var(--sp-6);margin-bottom:var(--sp-16)}
+.push-history{list-style:none;padding:0;margin-top:0;max-height:48vh;overflow:auto}
+.push-history .seq-open{cursor:default;min-width:0;align-items:stretch}
+.push-history time{color:var(--c-text-sub);font-size:var(--fs-caption)}
+.push-history p{margin:var(--sp-4) 0 0;white-space:pre-line;overflow-wrap:anywhere}
 .seq-row{display:flex;gap:var(--sp-6);align-items:stretch}
 .seq-open{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-2);padding:var(--sp-10) var(--sp-12);border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-card);color:var(--c-text);text-align:left;font:inherit;cursor:pointer}
 .seq-row.is-current .seq-open{border-color:var(--c-line-strong);background:var(--c-selected)}
@@ -15610,6 +15614,31 @@ window.AiLabDigest={
  addEventListener('resize',place);addEventListener('scroll',e=>{if(pop&&!pop.contains(e.target))place()},true);
  window.AiLabDateTime={openDate,openTime,openDateTime,close,isoDate,isoTime,today,nowTime,weekday:v=>{const d=new Date(isoDate(v)+'T00:00');return isNaN(d)?'':WEEK[d.getDay()]}};
 })();
+
+
+function pushHistory(notice) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('sequence-notifications', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('history');
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction('history', notice ? 'readwrite' : 'readonly');
+      const store = tx.objectStore('history');
+      const read = store.get('latest');
+      let items = [];
+      read.onsuccess = () => {
+        items = read.result || [];
+        if (!notice) return;
+        items = [notice, ...items.filter(item => item.tag !== notice.tag)]
+          .sort((a, b) => b.receivedAt - a.receivedAt).slice(0, 50);
+        store.put(items, 'latest');
+      };
+      tx.oncomplete = () => { db.close(); resolve(items); };
+      tx.onabort = () => { db.close(); reject(tx.error); };
+    };
+  });
+}
 
 
 window.RUN_PLAN_COMPACT=true;
@@ -15887,23 +15916,49 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
  document.addEventListener('touchstart',e=>{const t=e.target.closest?.('[data-plan-field=date],[data-plan-field=time]');if(t)t.inputMode='none'},{capture:true,passive:true});
  /* 빨간 선을 끄는 동안은 화면이 스크롤되지 않게 */
  document.addEventListener('touchmove',e=>{if(document.querySelector('.run-now-line.is-drag'))e.preventDefault()},{passive:false});
- /* [알림] 알림 연동: 이 휴대폰을 알림 받을 기기로 켜고, 코드를 회사 PC 앱허브 [내 정보] → 알림 연동에 붙여 넣는다.
-    앱허브는 회사 안에 있어 휴대폰이 직접 못 들어가므로, 알림 서버(Apple)를 거쳐 '새 알림이 있습니다'만 받는다. */
+ async function openPush(){
+  dialog.querySelector('h2').textContent='알림 내역';
+  body.innerHTML=`<div data-push-history role="status"><p class="muted-copy">알림을 불러오는 중입니다.</p></div><div class="actions"><button type="button" class="btn" data-settings>알림 연동</button><button type="button" class="btn" data-close>닫기</button></div>`;
+  const list=body.querySelector('[data-push-history]');
+  body.querySelector('[data-close]').onclick=()=>dialog.close();
+  body.querySelector('[data-settings]').onclick=openPushSettings;
+  if(!dialog.open)dialog.showModal();
+  await renderPushHistory(list);
+ }
+ async function renderPushHistory(list){
+  try{
+   const items=await pushHistory();
+   list.innerHTML=items.length?`<ul class="seq-list push-history">${items.map(item=>`<li class="seq-open"><strong>${esc(item.title)}</strong><time datetime="${new Date(item.receivedAt).toISOString()}">${esc(stamp(item.receivedAt))}</time><p>${esc(item.body)}</p></li>`).join('')}</ul>`:'<p class="muted-copy">받은 알림이 없습니다.</p>';
+  }catch{list.innerHTML='<p class="muted-copy">알림 내역을 불러올 수 없습니다.</p>'}
+ }
  const PUSH_KEY='BPU0pPSzUgbnARC21YwjM7tZE7oJVPhD11_fgsYMUGLbS-jteO27kD-rYHVCmVUmbzA0M6fkGJTeyaHehAaxouc';
  const b64=bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
  const pushCode=sub=>{const j=sub.toJSON();return 'AILAB1.'+b64(new TextEncoder().encode(JSON.stringify({e:j.endpoint,p:j.keys?.p256dh||'',a:j.keys?.auth||''})))};
- async function openPush(){dialog.querySelector('h2').textContent='알림 연동';const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-  const ready='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&location.protocol==='https:';
-  const draw=(html,actions)=>{body.innerHTML=`<div class="push-help">${html}</div><div class="actions">${actions}<button type="button" class="btn" data-close>닫기</button></div><p class="seq-feedback muted-copy" role="status" hidden></p>`;body.querySelector('[data-close]').onclick=()=>dialog.close();if(!dialog.open)dialog.showModal()};
+ async function openPushSettings(){dialog.querySelector('h2').textContent='알림 연동';const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const ready='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&window.isSecureContext;
+  const draw=(html,actions)=>{body.innerHTML=`<div class="push-help">${html}</div><div class="actions">${actions}<button type="button" class="btn" data-history>알림 내역</button><button type="button" class="btn" data-close>닫기</button></div><p class="seq-feedback muted-copy" role="status" hidden></p>`;body.querySelector('[data-close]').onclick=()=>dialog.close();body.querySelector('[data-history]').onclick=openPush;if(!dialog.open)dialog.showModal()};
   if(!ready||!standalone)return draw(`<p class="muted-copy">${!standalone?'홈 화면에 추가한 앱에서만 알림을 켤 수 있습니다. Safari 공유 → 홈 화면에 추가 후, 홈 화면의 앱으로 열어 주세요.':'이 기기에서는 알림을 쓸 수 없습니다. (iPhone은 iOS 16.4 이상)'}</p>`,'');
-  const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+  draw('<p class="muted-copy">알림 연동 상태를 확인하는 중입니다.</p>','');
+  const loading=body.querySelector('[data-history]');
+  const current=()=>dialog.open&&body.contains(loading);
+  let reg,sub;
+  try{reg=await navigator.serviceWorker.getRegistration();if(!reg?.active)throw Error();sub=await reg.pushManager.getSubscription()}
+  catch{if(current())draw('<p class="muted-copy">알림 연동에 연결할 수 없습니다. 앱을 다시 열어 주세요.</p>','');return}
+  if(!current())return;
   const showCode=()=>{const code=pushCode(sub);draw(`<p class="muted-copy">이 휴대폰은 알림을 받을 준비가 되었습니다. 아래 코드를 회사 PC 앱허브 [내 정보] → <b>알림 연동</b>에 붙여 넣고 [등록]을 눌러 주세요.</p><textarea class="push-code" readonly rows="4">${esc(code)}</textarea><p class="muted-copy">알림에는 요청 유형과 제품명·시험법·요청자가 표시됩니다.</p>`,'<button type="button" class="btn btn-primary" data-copy>코드 복사</button><button type="button" class="btn" data-off>알림 끄기</button>');
    const area=body.querySelector('.push-code');area.onclick=()=>area.select();
    body.querySelector('[data-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(code);toast('코드를 복사했습니다.')}catch{area.select();toast('코드를 길게 눌러 복사해 주세요.')}};
-   body.querySelector('[data-off]').onclick=async()=>{if(!confirm('이 휴대폰의 알림을 끌까요? 다시 켜면 코드가 바뀌어 다시 등록해야 합니다.'))return;await sub.unsubscribe().catch(()=>{});sub=null;openPush()}};
+   body.querySelector('[data-off]').onclick=async()=>{if(!confirm('이 휴대폰의 알림을 끌까요? 다시 켜면 코드가 바뀌어 다시 등록해야 합니다.'))return;await sub.unsubscribe().catch(()=>{});sub=null;if(dialog.open&&body.contains(area))openPushSettings()}};
   if(sub)return showCode();
   draw('<p class="muted-copy">[알림 켜기]를 누르고 알림을 허용하면 코드가 나옵니다. 그 코드를 회사 PC 앱허브 [내 정보] → <b>알림 연동</b>에 등록하면, 앱허브에 새 알림이 생길 때 이 휴대폰에 알림이 옵니다.</p>','<button type="button" class="btn btn-primary" data-on>알림 켜기</button>');
-  body.querySelector('[data-on]').onclick=async()=>{try{if(await Notification.requestPermission()!=='granted')return toast('알림이 허용되지 않았습니다. 설정 → 알림에서 허용해 주세요.');const raw=atob(PUSH_KEY.replace(/-/g,'+').replace(/_/g,'/'));sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(raw,c=>c.charCodeAt(0))});showCode()}catch(error){toast('알림을 켜지 못했습니다: '+(error?.message||error))}}}
+  const enable=body.querySelector('[data-on]');enable.onclick=async()=>{try{if(await Notification.requestPermission()!=='granted')return toast('알림이 허용되지 않았습니다. 설정 → 알림에서 허용해 주세요.');const raw=atob(PUSH_KEY.replace(/-/g,'+').replace(/_/g,'/'));sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(raw,c=>c.charCodeAt(0))});if(dialog.open&&body.contains(enable))showCode()}catch(error){toast('알림을 켜지 못했습니다: '+(error?.message||error))}}}
  document.getElementById('pushBtn').onclick=()=>openPush();
- if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js')})();
+ if('serviceWorker' in navigator&&window.isSecureContext){
+  navigator.serviceWorker.addEventListener('message',event=>{
+   const list=dialog.open&&body.querySelector('[data-push-history]');
+   if(list&&event.data==='sequence-notification-saved')renderPushHistory(list);
+  });
+  navigator.serviceWorker.register('sw.js');
+ }
+})();
 </script></body></html>
