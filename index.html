@@ -15854,7 +15854,44 @@ Sample A_3</pre></div>
    el.addEventListener('pointerup',drop);el.addEventListener('pointercancel',drop)}
   bindMethodTabs();
   bindMethod()}
- function drawMethod(id){
+ let stopMethodScroll;
+ function captureMethodScroll(){
+  const root=document.scrollingElement;
+  const scrolls=[];
+  for(let node=host;node&&node!==root;node=node.parentElement){
+   if(/^(auto|scroll|overlay)$/.test(getComputedStyle(node).overflowY)&&node.scrollHeight>node.clientHeight)
+    scrolls.push([node,node.scrollLeft,node.scrollTop]);
+  }
+  if(root)scrolls.push([root,root.scrollLeft,root.scrollTop]);
+  return scrolls;
+ }
+ function keepMethodScroll(scrolls){
+  stopMethodScroll?.();
+  const abort=new AbortController();
+  const initial=performance.now(),duration=window.AiLabMotion?.timing('base').duration||0;
+  let frame=0,checks=0;
+  const stop=()=>{abort.abort();cancelAnimationFrame(frame);stopMethodScroll=null};
+  const restore=()=>{
+   for(const [node,left,top] of scrolls){
+    if(!node.isConnected)continue;
+    const y=Math.min(top,Math.max(0,node.scrollHeight-node.clientHeight));
+    if(Math.abs(node.scrollTop-y)>1||Math.abs(node.scrollLeft-left)>1)
+     node.scrollTo({left,top:y,behavior:'instant'});
+   }
+  };
+  // Restoring an existing position is immediate. A new gesture always takes precedence.
+  const options={signal:abort.signal,capture:true,passive:true};
+  for(const type of ['pointerdown','touchmove','wheel','keydown'])window.addEventListener(type,stop,options);
+  stopMethodScroll=stop;
+  const check=now=>{
+   restore();
+   if(++checks<3||now-initial<duration)frame=requestAnimationFrame(check);
+   else stop();
+  };
+  restore();
+  frame=requestAnimationFrame(check);
+ }
+ function drawMethod(id,scrolls=captureMethodScroll(),trigger){
   activeMethod=id;
   for(const tab of host.querySelectorAll('[data-method-tab]')){
    const selected=tab.dataset.methodTab===id;
@@ -15863,16 +15900,34 @@ Sample A_3</pre></div>
   }
   pointFocus=null;
   const panel=host.querySelector('[data-method-body]');
-  panel.innerHTML=methodHtml(plan.methods.find(m=>m.id===id));
-  bindMethod();
-  update();
+  const contents=document.createElement('template');
+  contents.innerHTML=methodHtml(plan.methods.find(m=>m.id===id));
+  const previousMinHeight=panel.style.minHeight;
+  panel.style.minHeight=panel.offsetHeight+'px';
+  try{
+   panel.replaceChildren(contents.content);
+   bindMethod();
+   update();
+  }finally{
+   panel.style.minHeight=previousMinHeight;
+   if(trigger)trigger.focus({preventScroll:true});
+   keepMethodScroll(scrolls);
+  }
   window.AiLabMotion?.enter(panel);
  }
  function bindMethodTabs(){
   const tabs=host.querySelector('.run-method-tabs'),add=tabs.querySelector('[data-method-add]');
+  let pressed;
+  tabs.onpointerdown=event=>{
+   const button=event.target.closest('[data-method-tab]');
+   pressed=button?{button,scrolls:captureMethodScroll()}:null;
+  };
+  tabs.onpointercancel=()=>{pressed=null};
   tabs.onclick=event=>{
    const button=event.target.closest('[data-method-tab]');
-   if(button&&button.dataset.methodTab!==activeMethod)drawMethod(button.dataset.methodTab);
+   const scrolls=event.detail&&pressed?.button===button?pressed.scrolls:undefined;
+   pressed=null;
+   if(button&&button.dataset.methodTab!==activeMethod)drawMethod(button.dataset.methodTab,scrolls,button);
   };
   tabs.onkeydown=event=>{
    const current=event.target.closest('[data-method-tab]');
@@ -15881,8 +15936,7 @@ Sample A_3</pre></div>
    const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:
     (index+(event.key==='ArrowLeft'?-1:1)+buttons.length)%buttons.length;
    event.preventDefault();
-   buttons[next].focus({preventScroll:true});
-   buttons[next].click();
+   if(buttons[next]!==current)drawMethod(buttons[next].dataset.methodTab,undefined,buttons[next]);
   };
   add.onclick=()=>{
    const method=runDefaultMethod(`Method ${plan.methods.length+1}`);
