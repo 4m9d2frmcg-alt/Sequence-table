@@ -1394,6 +1394,7 @@ dialog>button.ailab-dialog-x:hover {
   flex:1;
   min-height:0;
   overflow:auto;
+  overscroll-behavior:contain;
 }
 
 .ailab-digest.is-columns .ailab-digest-section>.btn,
@@ -1479,12 +1480,6 @@ dialog>button.ailab-dialog-x:hover {
   font-size:var(--fs-body);
 }
 
-.ailab-digest-more {
-  margin:var(--sp-8) 0 0;
-  color:var(--c-text-sub);
-  font-size:var(--fs-small);
-}
-
 .ailab-digest-none {
   margin:0;
   color:var(--c-text-sub);
@@ -1504,6 +1499,14 @@ dialog>button.ailab-dialog-x:hover {
   margin-top:var(--sp-14);
 }
 
+body .ailab-digest [data-digest-action] {
+  background:var(--c-block);
+}
+
+body .ailab-digest [data-digest-action]:hover {
+  background:var(--c-hover);
+}
+
 @media(max-width:760px) {
   .ailab-digest.is-columns[open] {
     height:auto;
@@ -1511,6 +1514,12 @@ dialog>button.ailab-dialog-x:hover {
 
   .ailab-digest.is-columns .ailab-digest-body {
     grid-template-columns:minmax(0,1fr);
+    overflow:auto;
+    overscroll-behavior:contain;
+  }
+
+  .ailab-digest.is-columns .ailab-digest-list {
+    overflow:visible;
   }
 }
 
@@ -15438,11 +15447,11 @@ window.AiLabDigest={
   /* 자동 화면 검사(브라우저 테스트)는 로그인 팝업이 클릭을 막지 않게 건너뛴다. 팝업 자체를 검사할 때는 window.AILAB_DIGEST_TEST=true */
   if(navigator.webdriver&&!window.AILAB_DIGEST_TEST)return false;
   try{if(!force&&sessionStorage.getItem('ailab-digest:'+key))return false;sessionStorage.setItem('ailab-digest:'+key,'1')}catch{}
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),MAX=columns?8:6;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const list=columns?sections:sections.filter(s=>s.items?.length||s.note);
   /* 배지(긴급 등)는 두 줄 글 바로 오른쪽, 두 줄의 가운데 높이 */const row=it=>`<li class="${[it.dim?'is-dim':'',it.badge?'has-badge':''].join(' ').trim()}"><div class="ailab-digest-text"><strong>${esc(it.main)}</strong>${it.meta?`<span>${esc(it.meta)}</span>`:''}</div>${it.badge?`<span class="${esc(it.badge.className||'ailab-digest-badge')}">${esc(it.badge.text)}</span>`:''}</li>`;
   document.getElementById('ailabDigest')?.remove();const d=document.createElement('dialog');d.id='ailabDigest';d.className='ailab-digest'+(columns?' is-columns':'');d.setAttribute('aria-labelledby','ailabDigestTitle');
-  d.innerHTML=`<h2 id="ailabDigestTitle">${esc(title)}</h2>${example?'<p class="ailab-digest-example">TEST MODE 예시입니다. 서버에서는 실제 요청이 보입니다.</p>':''}<div class="ailab-digest-body">${list.map((s,i)=>`<section class="ailab-digest-section"><h3>${esc(s.title)}${s.items?` <b>${s.items.length}건</b>`:''}</h3>${s.note?`<p class="ailab-digest-note">${esc(s.note)}</p>`:''}<div class="ailab-digest-list">${s.items?.length?`<ul>${s.items.slice(0,MAX).map(row).join('')}</ul>${s.items.length>MAX?`<p class="ailab-digest-more">외 ${s.items.length-MAX}건</p>`:''}`:`<p class="ailab-digest-none">${esc(s.empty||'대기 중인 요청이 없습니다.')}</p>`}</div>${s.action?`<button type="button" class="btn" data-digest-action="${i}">${esc(s.action)}</button>`:''}</section>`).join('')}</div><div class="actions"><button type="button" class="btn">닫기</button></div>`;
+  d.innerHTML=`<h2 id="ailabDigestTitle">${esc(title)}</h2>${example?'<p class="ailab-digest-example">TEST MODE 예시입니다. 서버에서는 실제 요청이 보입니다.</p>':''}<div class="ailab-digest-body">${list.map((s,i)=>`<section class="ailab-digest-section"><h3>${esc(s.title)}${s.items?` <b>${s.items.length}건</b>`:''}</h3>${s.note?`<p class="ailab-digest-note">${esc(s.note)}</p>`:''}<div class="ailab-digest-list">${s.items?.length?`<ul>${s.items.map(row).join('')}</ul>`:`<p class="ailab-digest-none">${esc(s.empty||'대기 중인 요청이 없습니다.')}</p>`}</div>${s.action?`<button type="button" class="btn" data-digest-action="${i}">${esc(s.action)}</button>`:''}</section>`).join('')}</div><div class="actions"><button type="button" class="btn">닫기</button></div>`;
   document.body.append(d);d.querySelector('.actions>button').onclick=()=>d.close();
   d.querySelectorAll('[data-digest-action]').forEach(b=>b.onclick=()=>{d.close();list[Number(b.dataset.digestAction)].onAction?.()});
   d.addEventListener('close',()=>d.remove(),{once:true});d.showModal();/* 첫 버튼에 선택 테두리가 생기지 않게 제목에 초점(로그인 직후 Enter로 잘못 누르는 일도 막음) */const head=d.querySelector('h2');head.tabIndex=-1;head.focus({preventScroll:true});return true}
