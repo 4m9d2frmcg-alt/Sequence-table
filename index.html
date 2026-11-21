@@ -15875,7 +15875,7 @@ Sample A_3</pre></div>
    tr.querySelector('[data-point-remove]').onclick=()=>{m.points.splice(Number(tr.dataset.point),1);drawMethod()}});
   /* 기울기 표도 방향키로 이동: 위·아래는 같은 열, 좌·우는 글자 끝에서 옆 칸 */
   host.querySelectorAll('[data-point-field]').forEach(el=>el.addEventListener('keydown',e=>{const tr=el.closest('[data-point]'),i=Number(tr.dataset.point),k=el.dataset.pointField,cols=[...tr.querySelectorAll('[data-point-field]')].map(x=>x.dataset.pointField),ci=cols.indexOf(k),go=(r,f)=>{const to=host.querySelector(`[data-point="${r}"] [data-point-field="${f}"]`);if(!to)return;e.preventDefault();to.focus();to.select()};if(e.isComposing)return;if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='d'){/* Ctrl+D: 이 칸 값을 아래 행 같은 열에 모두 채움(입력과 같게 A~D 합 100 맞춤) */e.preventDefault();host.querySelectorAll('[data-point]').forEach(row=>{if(Number(row.dataset.point)<=i)return;const cell=row.querySelector(`[data-point-field="${k}"]`);if(!cell)return;cell.value=el.value;cell.dispatchEvent(new Event('input',{bubbles:true}))});return}if(e.key==='Enter'){/* Enter: 같은 행 다음 열, 마지막 열이면 다음 행 첫 열 */if(ci<cols.length-1)go(i,cols[ci+1]);else go(i+1,cols[0])}else if(e.key==='ArrowUp')go(i-1,k);else if(e.key==='ArrowDown')go(i+1,k);else if(e.key==='ArrowLeft'&&el.selectionStart===0&&el.selectionEnd===0&&ci>0)go(i,cols[ci-1]);else if(e.key==='ArrowRight'&&el.selectionStart===el.value.length&&ci<cols.length-1)go(i,cols[ci+1])}));
-  q('[data-point-add]').onclick=event=>{const last=m.points.at(-1);m.points.push({t:'',flow:last?.flow??1,a:0,b:0,c:0,d:0,curve:6});const y=scrollY;drawMethod();if(autoFocusOnClick(event))host.querySelector('[data-point]:last-child [data-point-field=t]')?.focus({preventScroll:true});scrollTo(0,y)}}
+  host.querySelector('[data-point-add]').onclick=event=>{const last=m.points.at(-1);m.points.push({t:'',flow:last?.flow??1,a:0,b:0,c:0,d:0,curve:6});const y=scrollY;drawMethod();if(autoFocusOnClick(event))host.querySelector('[data-point]:last-child [data-point-field=t]')?.focus({preventScroll:true});scrollTo(0,y)}}
  const tick=setInterval(()=>{if(!host.isConnected||host.querySelector('.run-plan')?.dataset.test!==testId||!plan)return host.isConnected?null:clearInterval(tick);markNow()},30000);
  runLoad(testId).catch(()=>null).then(res=>{if(!host.isConnected||host.querySelector('.run-plan')?.dataset.test!==testId)return;const page=res?.page,draft=res?.draft;pageMeta=page?{updatedAt:page.updatedAt,by:page.by}:null;/* 페이지 저장 뒤에 고친 본인 임시본이 있으면 그것을 이어서 보여 준다. */const useDraft=!!draft?.plan&&(!page||!page.updatedAt||String(draft.updatedAt||'')>String(page.updatedAt));plan=runNormalize(structuredClone(useDraft?draft.plan:page?.plan))||runDefaultPlan();baseline=page?.plan?JSON.stringify(runNormalize(structuredClone(page.plan))):'';dirty=useDraft&&JSON.stringify(plan)!==baseline;activeMethod=plan.methods[0].id;history.list=[JSON.stringify(plan)];history.at=0;update.quiet=true;draw();update.quiet=false})}
 /* 이미 열려 있으면 다시 눌렀을 때 시험일지·양쪽 칸만 다시 접는다. */
@@ -15891,7 +15891,7 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
 {const open=openPage;openPage=function(...args){const result=open(...args);syncRunPlanButton();return result}}
 
 
-/* 화면 시작: 저장해 둔 시퀀스가 있으면 고르는 창부터. 다크 모드는 기기 설정 */
+/* 화면 시작: 마지막으로 열었던 시퀀스로 복귀. 다크 모드는 기기 설정 */
 (()=>{const dark=matchMedia('(prefers-color-scheme: dark)');const theme=()=>document.body.classList.toggle('dark',dark.matches);theme();dark.addEventListener('change',theme);
  const host=document.getElementById('tabContent'),label=document.getElementById('seqName'),stamp=v=>{const d=new Date(v);return isNaN(d)?'':`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const show=id=>{page=id;localStorage.setItem(CURRENT_KEY,id);host.innerHTML='';renderRunPlan(host);label.textContent=locate(id).t.name};
@@ -15906,7 +15906,7 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
  document.getElementById('listBtn').onclick=()=>openList();
  /* 머리의 [저장] = 표 위 [저장](앱에서는 표 위 저장 버튼과 '시작' 글자를 숨김) */
  document.getElementById('saveBtn').onclick=()=>host.querySelector('[data-run-save]')?.click();
- show(page);if(seqList().length)openList();
+ show(page);
  /* 실제 터치 화면의 텍스트 입력만 보정한다. 체크박스나 Fill down의 입력 이벤트는 제외한다. */
  let anchor=null;document.addEventListener('input',e=>{const el=e.target;
   if(e.isTrusted&&matchMedia('(pointer:coarse)').matches&&el===document.activeElement&&el.matches('.run-plan input[type=text],.run-plan input:not([type]),.run-plan textarea'))anchor={el,top:el.getBoundingClientRect().top};
