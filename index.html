@@ -15631,7 +15631,10 @@ function pushHistory(notice) {
       read.onsuccess = () => {
         items = read.result || [];
         if (!notice) return;
-        items = [notice, ...items.filter(item => item.tag !== notice.tag)]
+        const incoming = Array.isArray(notice) ? notice : [notice];
+        const byTag = new Map([...incoming, ...items].map(item => [item.tag, item]));
+        if (!Array.isArray(notice)) byTag.set(notice.tag, notice);
+        items = [...byTag.values()]
           .sort((a, b) => b.receivedAt - a.receivedAt).slice(0, 50);
         store.put(items, 'latest');
       };
@@ -15740,7 +15743,12 @@ function renderRunPlan(host){const context=locate(page);if(context&&host.querySe
  const travel=step=>{clearTimeout(history.timer);const s=JSON.stringify(plan);if(history.list[history.at]!==s){history.list=history.list.slice(0,history.at+1);history.list.push(s);history.at=history.list.length-1}const to=history.at+step;if(to<0||to>=history.list.length)return;history.at=to;const y=scrollY;plan=JSON.parse(history.list[to]);if(!plan.methods.some(m=>m.id===activeMethod))activeMethod=plan.methods[0].id;focus=null;draw();scrollTo(0,y);historyButtons()};
  host.innerHTML=`<section class="run-plan" data-test="${esc(testId)}"><p class="run-note">분석 일정표를 불러오고 있습니다.</p></section>`;
  const status=()=>{const meta=host.querySelector('[data-run-meta]');if(meta)meta.textContent=runSavedLabel(pageMeta)};
- const persist=(now=false)=>{clearTimeout(saveTimer);if(now)return runSave(testId,plan,'page').then(res=>{if(!res)return false;pageMeta={updatedAt:res.updatedAt,by:res.by};baseline=JSON.stringify(plan);dirty=false;status();return true});const changed=JSON.stringify(plan)!==baseline;if(!changed&&!dirty)return;dirty=changed;status();if(!changed)return;saveTimer=setTimeout(()=>runSave(testId,plan,'draft').catch(()=>toast('임시 저장하지 못했습니다. 연결을 확인해 주세요.')),600)};
+ const persist=(now=false)=>{clearTimeout(saveTimer);saveTimer=null;if(now)return runSave(testId,plan,'page').then(res=>{if(!res)return false;pageMeta={updatedAt:res.updatedAt,by:res.by};baseline=JSON.stringify(plan);dirty=false;status();return true});const changed=JSON.stringify(plan)!==baseline;if(!changed&&!dirty)return;dirty=changed;status();if(!changed)return;saveTimer=setTimeout(()=>{saveTimer=null;runSave(testId,plan,'draft').catch(()=>toast('임시 저장하지 못했습니다. 연결을 확인해 주세요.'))},600)};
+ if(runCompact())host.flushRunDraft=()=>{
+  if(saveTimer===null)return;
+  clearTimeout(saveTimer);saveTimer=null;
+  return runSave(testId,plan,'draft');
+ };
  const cell=(field,row,label,extra='')=>`<td class="run-cell"><input data-field="${field}" value="${esc(row[field]??'')}" aria-label="${label}" autocomplete="off" ${extra}></td>`;
  function rowHtml(row){if(row.kind==='eq')return `<tr data-row="${esc(row.id)}" class="run-eq"><td class="run-del"><button type="button" class="run-icon" data-row-remove aria-label="행 삭제" title="행 삭제">×</button></td><td class="run-n" data-run-index></td><td class="run-check"></td><td class="run-cell"><div class="run-eq-name"><input data-field="name" value="${esc(row.name??'')}" aria-label="EQ 시간(분)" placeholder="0" inputmode="decimal" autocomplete="off"><span title="고른 Method의 첫 줄 유속·조성으로 이 시간 동안 흐른 뒤 다음 행을 시작합니다">분 EQ</span></div></td>${cell('method',row,'Method','role="combobox" aria-autocomplete="list"')}${runCompact()?'':'<td class="run-eq-skip"></td>'}${cell('memo1',row,plan.memoTitles[0])}${runCompact()?'':cell('memo2',row,plan.memoTitles[1])+cell('memo3',row,plan.memoTitles[2])}<td class="run-calc" data-run-begin></td><td class="run-calc" data-run-end></td></tr>`;return `<tr data-row="${esc(row.id)}"><td class="run-del"><button type="button" class="run-icon" data-row-remove aria-label="행 삭제" title="행 삭제">×</button></td><td class="run-n" data-run-index></td><td class="run-check"><input type="checkbox" data-field="check" aria-label="SST 확인" ${row.check?'checked':''}></td>${cell('name',row,'Sample name')}${cell('method',row,'Method','role="combobox" aria-autocomplete="list"')}${runCompact()?'':cell('vol',row,'주입량','inputmode="decimal"')}${cell('memo1',row,plan.memoTitles[0])}${runCompact()?'':cell('memo2',row,plan.memoTitles[1])+cell('memo3',row,plan.memoTitles[2])}<td class="run-calc" data-run-begin></td><td class="run-calc" data-run-end></td></tr>`}
  function methodHtml(){const m=plan.methods.find(x=>x.id===activeMethod)||plan.methods[0];activeMethod=m.id;return `<div class="run-method-tabs" role="tablist">${plan.methods.map(x=>`<button type="button" role="tab" aria-selected="${x.id===m.id}" class="${x.id===m.id?'is-active':''}" data-method-tab="${esc(x.id)}">${esc(x.name||'Method')}</button>`).join('')}<button type="button" class="run-method-add" data-method-add>+ 추가</button></div>
@@ -15900,7 +15908,97 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
  const baseSave=runSave;runSave=async function(testId,plan,scope='draft'){if(scope==='page'){const list=seqList();let entry=list.find(x=>x.id===testId);if(!entry){const name=await askName(plan);if(!name)return null;entry={id:testId,name};list.unshift(entry)}entry.updatedAt=new Date().toISOString();seqWrite(list);label.textContent=entry.name}return baseSave(testId,plan,scope)};
  const dialog=document.getElementById('seqDialog'),body=document.getElementById('seqDialogBody');
  function askName(plan){const first=String(plan?.rows?.find(r=>r.name&&r.kind!=='eq')?.name||'').replace(/_\d+$/,'');return new Promise(done=>{dialog.querySelector('h2').textContent='시퀀스 저장';body.innerHTML=`<form id="seqNameForm" class="seq-name-form"><label>검체명<input name="sample" required value="${esc(first)}" autocomplete="off"></label><label>시험법<input name="method" autocomplete="off"></label><div class="actions"><button class="btn btn-primary" type="submit">저장</button><button class="btn" type="button" data-cancel>취소</button></div></form>`;const form=body.querySelector('form');let result=null;form.onsubmit=e=>{e.preventDefault();const a=form.sample.value.trim(),b=form.method.value.trim();result=[a,b].filter(Boolean).join('_');dialog.close()};form.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>done(result),{once:true});dialog.showModal();form.sample.focus()})}
- function openList(){const list=seqList();dialog.querySelector('h2').textContent='시퀀스 목록';body.innerHTML=`<div class="seq-list">${list.map(x=>`<div class="seq-row${x.id===page?' is-current':''}"><button type="button" class="seq-open" data-id="${esc(x.id)}"><strong>${esc(x.name)}</strong><small>${esc(stamp(x.updatedAt))}</small></button><button type="button" class="btn seq-delete" data-delete="${esc(x.id)}">삭제</button></div>`).join('')||'<p class="muted-copy">저장한 시퀀스가 없습니다.</p>'}</div><div class="actions"><button type="button" class="btn btn-primary" data-new>새 시퀀스</button><button type="button" class="btn" data-close>닫기</button></div>`;
+ const backupFormat='ailab-sequence-backup';
+ const validSeqId=id=>typeof id==='string'&&/^seq-[\w-]+$/.test(id)&&id.length<=500;
+ const isRecord=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+ function sequenceSnapshot(id,entry){
+  return {id,entry:entry||null,saved:runRead(runPageKey(id)),draft:runRead(runStoreKey(id))};
+ }
+ async function backupSequences(){
+  try{
+   await host.flushRunDraft?.();
+   const list=seqList(), ids=new Set([page,...list.map(entry=>entry.id)]);
+   const draftPrefix=runStoreKey('');
+   Object.keys(localStorage).forEach(key=>{
+    if(key.startsWith(draftPrefix)&&validSeqId(key.slice(draftPrefix.length)))ids.add(key.slice(draftPrefix.length));
+   });
+   const notices=await pushHistory();
+   const sequences=[...ids].map(id=>sequenceSnapshot(id,list.find(entry=>entry.id===id)));
+   const backup={format:backupFormat,version:1,current:page,sequences,notices};
+   const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
+   const link=document.createElement('a');
+   link.href=url;link.download='시퀀스-백업-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch{toast('백업 파일을 만들지 못했습니다.')}
+ }
+ function readSequenceBackup(data){
+  const validPlan=value=>{
+   if(!isRecord(value))return false;
+   const plan=value.plan??value;
+   return isRecord(plan)&&Array.isArray(plan.rows)&&plan.rows.every(isRecord)&&
+    [plan.methods,plan.ims].every(methods=>methods==null||Array.isArray(methods)&&methods.every(method=>isRecord(method)&&
+     (method.points==null||Array.isArray(method.points)&&method.points.every(isRecord))));
+  };
+  const validNotice=item=>isRecord(item)&&typeof item.tag==='string'&&typeof item.body==='string'&&
+   typeof item.title==='string'&&typeof item.receivedAt==='number'&&Number.isFinite(new Date(item.receivedAt).getTime());
+  if(!isRecord(data)||data.format!==backupFormat||data.version!==1||
+   !Array.isArray(data.sequences)||!Array.isArray(data.notices)||data.notices.length>50||!data.notices.every(validNotice)||
+   !data.sequences.every(item=>isRecord(item)&&validSeqId(item.id)&&
+    (item.entry===null||isRecord(item.entry)&&item.entry.id===item.id&&typeof item.entry.name==='string')&&
+    [item.saved,item.draft].every(value=>value===null||validPlan(value)))||
+   new Set(data.sequences.map(item=>item.id)).size!==data.sequences.length||
+   !data.sequences.some(item=>item.id===data.current))throw Error();
+  return data;
+ }
+ async function restoreSequences(file,control){
+  if(!file)return;
+  control.disabled=true;
+  try{
+   let backup;
+   try{backup=readSequenceBackup(JSON.parse(await file.text()))}
+   catch{toast('시퀀스 백업 파일을 선택해 주세요.');return}
+   await host.flushRunDraft?.();
+   const list=seqList().slice(), writes=new Map(), restored=new Map();
+   const equivalent=(id,item)=>{
+    const current=sequenceSnapshot(id,list.find(entry=>entry.id===id));
+    const savedName=current.entry&&current.entry.name, importedName=item.entry&&item.entry.name;
+    return savedName===importedName&&JSON.stringify(current.saved)===JSON.stringify(item.saved)&&
+     JSON.stringify(current.draft)===JSON.stringify(item.draft);
+   };
+   for(const item of backup.sequences){
+    const used=id=>id===page||list.some(entry=>entry.id===id)||localStorage.getItem(runPageKey(id))!==null||
+     localStorage.getItem(runStoreKey(id))!==null||writes.has(runStoreKey(id))||writes.has(runPageKey(id));
+    let id=item.id;
+    if(used(id)&&!equivalent(id,item)){
+     let copy=1;
+     do{id=item.id+'-restored-'+copy++}while(used(id)&&!equivalent(id,item));
+    }
+    restored.set(item.id,id);
+    if(used(id))continue;
+    if(item.entry)list.push({...item.entry,id});
+    if(item.saved)writes.set(runPageKey(id),JSON.stringify(item.saved));
+    if(item.draft)writes.set(runStoreKey(id),JSON.stringify(item.draft));
+   }
+   writes.set(LIST_KEY,JSON.stringify(list));
+   const previous=new Map([...writes.keys()].map(key=>[key,localStorage.getItem(key)]));
+   try{
+    writes.forEach((value,key)=>localStorage.setItem(key,value));
+    if(backup.notices.length)await pushHistory(backup.notices);
+   }catch(error){
+    previous.forEach((value,key)=>value===null?localStorage.removeItem(key):localStorage.setItem(key,value));
+    throw error;
+   }
+   show(restored.get(backup.current));
+   if(dialog.open&&body.contains(control))openList();
+   toast('백업을 복원했습니다.');
+  }catch{toast('백업 파일을 복원하지 못했습니다.')}
+  finally{control.disabled=false;control.value=''}
+ }
+ function openList(){const list=seqList();dialog.querySelector('h2').textContent='시퀀스 목록';body.innerHTML=`<div class="seq-list">${list.map(x=>`<div class="seq-row${x.id===page?' is-current':''}"><button type="button" class="seq-open" data-id="${esc(x.id)}"><strong>${esc(x.name)}</strong><small>${esc(stamp(x.updatedAt))}</small></button><button type="button" class="btn seq-delete" data-delete="${esc(x.id)}">삭제</button></div>`).join('')||'<p class="muted-copy">저장한 시퀀스가 없습니다.</p>'}</div><div class="actions"><button type="button" class="btn btn-primary" data-new>새 시퀀스</button><button type="button" class="btn" data-backup>백업</button><button type="button" class="btn" data-restore>복원</button><button type="button" class="btn" data-close>닫기</button></div><input type="file" accept=".json,application/json" data-backup-file hidden><p class="seq-feedback muted-copy" role="status" hidden></p>`;
+  const file=body.querySelector('[data-backup-file]');
+  body.querySelector('[data-backup]').onclick=backupSequences;
+  body.querySelector('[data-restore]').onclick=()=>file.click();
+  file.onchange=()=>restoreSequences(file.files[0],file);
   body.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{dialog.close();show(b.dataset.id)});
   body.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{const entry=seqList().find(x=>x.id===b.dataset.delete);if(!entry||!confirm(`'${entry.name}' 시퀀스를 지울까요?`))return;seqWrite(seqList().filter(x=>x.id!==entry.id));Object.keys(localStorage).filter(k=>k.startsWith(KEY)&&k.endsWith('-'+entry.id)).forEach(k=>localStorage.removeItem(k));if(entry.id===page)show('seq-'+uid());openList()});
   body.querySelector('[data-new]').onclick=()=>{dialog.close();show('seq-'+uid())};body.querySelector('[data-close]').onclick=()=>dialog.close();if(!dialog.open)dialog.showModal()}

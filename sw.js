@@ -17,7 +17,10 @@ function pushHistory(notice) {
       read.onsuccess = () => {
         items = read.result || [];
         if (!notice) return;
-        items = [notice, ...items.filter(item => item.tag !== notice.tag)]
+        const incoming = Array.isArray(notice) ? notice : [notice];
+        const byTag = new Map([...incoming, ...items].map(item => [item.tag, item]));
+        if (!Array.isArray(notice)) byTag.set(notice.tag, notice);
+        items = [...byTag.values()]
           .sort((a, b) => b.receivedAt - a.receivedAt).slice(0, 50);
         store.put(items, 'latest');
       };
