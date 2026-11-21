@@ -1274,6 +1274,8 @@ dialog>button.ailab-dialog-x:hover {
   color:var(--c-text-sub);
   font-size:var(--fs-small);
   line-height:1.6;
+  word-break:keep-all;
+  overflow-wrap:anywhere;
 }
 
 .push-phone-add {
@@ -1284,6 +1286,28 @@ dialog>button.ailab-dialog-x:hover {
 .push-phone-add>input {
   flex:1;
   min-width:0;
+}
+
+body .profile-settings-view :is(.push-phone-add>input,.push-phone-add>button,.push-phone-actions>button,.push-phone-list button) {
+  box-sizing:border-box;
+  height:var(--h-control)!important;
+  min-height:var(--h-control)!important;
+  margin-block:0!important;
+}
+
+body :is(#page-profile,#profileBody) .push-phone-add>input {
+  background:var(--c-block);
+  border:1px solid var(--c-line);
+}
+
+body .profile-settings-view :is(.push-phone-add>button,.push-phone-actions>button,.push-phone-list button) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 var(--sp-12);
+  font-size:var(--fs-body);
+  font-weight:var(--fw-medium);
+  white-space:nowrap;
 }
 
 .push-phone-list {
@@ -2716,7 +2740,14 @@ body .audit-view .audit-table :is(th,td) {
   line-height:1.5;
 }
 
-body .audit-view .audit-table th {
+body .audit-view table.audit-table th {
+  box-sizing:border-box;
+  height:var(--h-menu);
+  padding:0 var(--sp-12);
+  border-width:0 0 1px;
+  border-style:solid;
+  border-color:var(--c-line);
+  vertical-align:middle;
   font-weight:var(--fw-medium);
   background:var(--c-block);
 }
@@ -2785,6 +2816,10 @@ body #page-admin .admin-panel>.account-management-heading>h3,
 body .main-notice>summary .notice-title,
 body .selection-grid .catalog-heading>h2,
 body .note-card-context,
+body #page-pending>.card>.bar>h2,
+body #page-approvals .approval-compose>h2,
+body #page-approvals .approval-list-heading>h2,
+body .settings-admin-only .tavily-credits h3,
 body #adminBody h3,
 body :is(#page-admin,#adminBody) .settings-block>:is(h2,h3),
 body .profile-settings-view :is(.profile-section-title,.profile-password-title) {
@@ -2917,6 +2952,42 @@ body .profile-settings-view .profile-identity .profile-section-title {
   body .profile-settings-view>:is(.settings-block,.profile-settings-block) {
     padding:var(--sp-18);
   }
+}
+
+
+/* Shared fields and account commands in the two authentication dialogs. */
+body :is(#loginBtn,#signupBtn,#registerBtn,#notificationBtn,#notifyBtn,#themeBtn) {
+  font-size:var(--fs-small)!important;
+}
+
+body dialog :is(#loginForm,#signupForm,#registerForm,#serverLoginForm,#serverRegistrationForm) label {
+  display:block;
+  margin:var(--sp-12) 0;
+  color:var(--c-text-sub);
+  font-size:var(--fs-small);
+  font-weight:var(--fw-medium);
+  line-height:var(--lh-heading);
+}
+
+body dialog :is(#loginForm,#signupForm,#registerForm,#serverLoginForm,#serverRegistrationForm) input {
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  height:var(--h-control)!important;
+  min-height:var(--h-control)!important;
+  max-height:var(--h-control);
+  margin:var(--sp-8) 0 0;
+  padding:0 var(--sp-12);
+  border:1px solid var(--c-line);
+  border-radius:var(--r-md);
+  background:var(--c-page);
+  color:var(--c-text);
+  font-size:var(--fs-body);
+  font-weight:var(--fw-regular);
+}
+
+body :is(#page-admin,#adminBody) .account-department-filter>.app-select>button.app-select-trigger {
+  font-size:var(--fs-small)!important;
 }
 
 :root {
@@ -5637,29 +5708,6 @@ body.dark .admin-tabs>button:not(.active) {
 }
 
 /* Shared sign-in and registration form metrics. */
-
-:is(#loginForm,#signupForm,#registerForm) label {
-  display:block;
-  font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;
-  color:var(--c-text-sub);
-  margin:var(--sp-12) 0;
-}
-
-:is(#loginForm,#signupForm,#registerForm) input {
-  box-sizing:border-box;
-  width:100%;
-  height:42px;
-  min-height:42px;
-  max-height:42px;
-  display:block;
-  padding:var(--sp-10) var(--sp-12);
-  margin-top:var(--sp-8);
-  border:1px solid var(--c-line);
-  border-radius:var(--r-md);
-  background:var(--c-page);
-  color:var(--c-text);
-  font:400 14px/20px -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;
-}
 
 :is(#loginForm,#signupForm,#registerForm) :is(.actions,.dialog-actions) {
   display:flex;
@@ -8835,11 +8883,6 @@ body .settings-admin-only .tavily-credits {
   border-radius:0;
   padding:var(--sp-18) 0 0;
   margin-top:var(--sp-24);
-}
-
-body .settings-admin-only .tavily-credits h3 {
-  font-size:var(--fs-card-title);
-  font-weight:var(--fw-strong);
 }
 
 body .audit-filter-form {
