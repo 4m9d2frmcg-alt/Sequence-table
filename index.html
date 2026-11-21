@@ -15955,6 +15955,18 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
  /* [저장]: 처음 저장하는 시퀀스는 '검체명_시험법' 이름을 받아 목록에 넣는다 */
  const baseSave=runSave;runSave=async function(testId,plan,scope='draft'){if(scope==='page'){const list=seqList();let entry=list.find(x=>x.id===testId);if(!entry){const name=await askName(plan);if(!name)return null;entry={id:testId,name};list.unshift(entry)}entry.updatedAt=new Date().toISOString();seqWrite(list);label.textContent=entry.name}return baseSave(testId,plan,scope)};
  const dialog=document.getElementById('seqDialog'),body=document.getElementById('seqDialogBody');
+ const isBackdrop=event=>{
+  if(event.target!==dialog)return false;
+  const {left,right,top,bottom}=dialog.getBoundingClientRect();
+  return event.clientX<left||event.clientX>right||event.clientY<top||event.clientY>bottom;
+ };
+ let backdropDown=false;
+ dialog.addEventListener('pointerdown',event=>{backdropDown=isBackdrop(event)});
+ dialog.addEventListener('pointercancel',()=>{backdropDown=false});
+ dialog.addEventListener('click',event=>{
+  if(backdropDown&&isBackdrop(event)&&body.querySelector('[data-push-history]'))dialog.close();
+  backdropDown=false;
+ });
  function askName(plan){const first=String(plan?.rows?.find(r=>r.name&&r.kind!=='eq')?.name||'').replace(/_\d+$/,'');return new Promise(done=>{dialog.querySelector('h2').textContent='시퀀스 저장';body.innerHTML=`<form id="seqNameForm" class="seq-name-form"><label>검체명<input name="sample" required value="${esc(first)}" autocomplete="off"></label><label>시험법<input name="method" autocomplete="off"></label><div class="actions"><button class="btn btn-primary" type="submit">저장</button><button class="btn" type="button" data-cancel>취소</button></div></form>`;const form=body.querySelector('form');let result=null;form.onsubmit=e=>{e.preventDefault();const a=form.sample.value.trim(),b=form.method.value.trim();result=[a,b].filter(Boolean).join('_');dialog.close()};form.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>done(result),{once:true});dialog.showModal();form.sample.focus()})}
  const backupFormat='ailab-sequence-backup';
  const validSeqId=id=>typeof id==='string'&&/^seq-[\w-]+$/.test(id)&&id.length<=500;
