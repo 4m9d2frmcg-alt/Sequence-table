@@ -7,7 +7,7 @@ self.addEventListener('push',event=>{
   let data;
   try { data=event.data?.json(); } catch (_) {}
   const app=data?.app;
-  const title=app==='column'?'KPTR 앱허브 컬럼':app==='note'?'KPTR 앱허브 노트':'KPTR 앱허브';
+  const title=app==='column'?'KPTR 앱허브 - 컬럼':app==='note'?'KPTR 앱허브 - 노트':'KPTR 앱허브';
   const known=app==='column'||app==='note';
   const body=known&&typeof data.body==='string'&&data.body?data.body:'새 요청이 있습니다.';
   const tag=known?'ailab-notice-'+app+(Number.isSafeInteger(data.noticeId)?'-'+data.noticeId:''):'ailab-notice';
