@@ -32,16 +32,20 @@ self.addEventListener('push',event=>{
   let data;
   try { data=event.data?.json(); } catch (_) {}
   const app=data?.app;
-  const title=app==='column'?'KPTR 앱허브 - 컬럼':app==='note'?'KPTR 앱허브 - 노트':'KPTR 앱허브';
-  const known=app==='column'||app==='note';
-  const body=known&&typeof data.body==='string'&&data.body?data.body:'새 요청이 있습니다.';
+  const appLabel=app==='column'?'컬럼':app==='note'?'노트':'';
+  const known=Boolean(appLabel);
+  const body=known&&typeof data.body==='string'&&data.body.trim()?data.body.trim():'새 요청이 있습니다.';
+  const [kind,...details]=body.split('\n');
+  const shortKind=app==='note'&&kind==='가입 승인 요청'?'가입 승인':kind;
+  const title=known?appLabel+' - '+(kind==='새 요청이 있습니다.'?'새 요청':shortKind):'새 알림';
+  const displayBody=known?details.join('\n'):body;
   const tag=known?'ailab-notice-'+app+(Number.isSafeInteger(data.noticeId)?'-'+data.noticeId:''):'ailab-notice';
   const receivedAt=Date.now();
   const historyTag=known&&Number.isSafeInteger(data.noticeId)?tag:tag+'-'+crypto.randomUUID();
   const saved=pushHistory({app,title,body,tag:historyTag,receivedAt}).then(async()=>{
     for(const client of await self.clients.matchAll({type:'window'}))client.postMessage('sequence-notification-saved');
   }).catch(()=>{});
-  event.waitUntil(Promise.all([self.registration.showNotification(title,{body,tag,icon:'icon-180.png'}),saved]));
+  event.waitUntil(Promise.all([self.registration.showNotification(title,{body:displayBody,tag,icon:'icon-180.png'}),saved]));
 });
 self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.matchAll({type:'window'}).then(list=>list[0]?list[0].focus():clients.openWindow('./')))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request,{ignoreSearch:true}).then(r=>r||caches.match('index.html'))))});
