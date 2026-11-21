@@ -15438,6 +15438,7 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
 .solo-current{flex-basis:100%;font-size:var(--fs-small);color:var(--c-text-sub);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .solo-current b{color:var(--c-text);font-weight:var(--fw-strong)}
 .seq-list{display:grid;gap:var(--sp-6);margin-bottom:var(--sp-16)}
+.push-history-tabs{margin-bottom:var(--sp-12)}
 .push-history{list-style:none;padding:0;margin-top:0;max-height:48vh;overflow:auto}
 .push-history .seq-open{cursor:default;min-width:0;align-items:stretch}
 .push-history time{color:var(--c-text-sub);font-size:var(--fs-caption)}
@@ -15916,19 +15917,42 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
  document.addEventListener('touchstart',e=>{const t=e.target.closest?.('[data-plan-field=date],[data-plan-field=time]');if(t)t.inputMode='none'},{capture:true,passive:true});
  /* 빨간 선을 끄는 동안은 화면이 스크롤되지 않게 */
  document.addEventListener('touchmove',e=>{if(document.querySelector('.run-now-line.is-drag'))e.preventDefault()},{passive:false});
+ let pushHistoryApp='column';
+ function noticeApp(item){
+  if(item.app==='column'||item.app==='note')return item.app;
+  return /^ailab-notice-(column|note)(?:-|$)/.exec(item.tag)?.[1];
+ }
  async function openPush(){
   dialog.querySelector('h2').textContent='알림 내역';
-  body.innerHTML=`<div data-push-history role="status"><p class="muted-copy">알림을 불러오는 중입니다.</p></div><div class="actions"><button type="button" class="btn" data-settings>알림 연동</button><button type="button" class="btn" data-close>닫기</button></div>`;
+  body.innerHTML=`<div class="admin-tabs push-history-tabs" role="group" aria-label="알림 종류"><button type="button" class="btn" data-push-app="column">컬럼</button><button type="button" class="btn" data-push-app="note">노트</button></div><div data-push-history role="status"><p class="muted-copy">알림을 불러오는 중입니다.</p></div><div class="actions"><button type="button" class="btn" data-settings>알림 연동</button><button type="button" class="btn" data-close>닫기</button></div>`;
   const list=body.querySelector('[data-push-history]');
   body.querySelector('[data-close]').onclick=()=>dialog.close();
   body.querySelector('[data-settings]').onclick=openPushSettings;
+  const tabs=body.querySelectorAll('[data-push-app]');
+  const select=app=>{
+   pushHistoryApp=app;
+   tabs.forEach(button=>{
+    const active=button.dataset.pushApp===app;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-pressed',String(active));
+   });
+   return renderPushHistory(list);
+  };
+  tabs.forEach(button=>button.onclick=()=>select(button.dataset.pushApp));
   if(!dialog.open)dialog.showModal();
-  await renderPushHistory(list);
+  await select(pushHistoryApp);
  }
  async function renderPushHistory(list){
   try{
    const items=await pushHistory();
-   list.innerHTML=items.length?`<ul class="seq-list push-history">${items.map(item=>`<li class="seq-open"><strong>${esc(item.title)}</strong><time datetime="${new Date(item.receivedAt).toISOString()}">${esc(stamp(item.receivedAt))}</time><p>${esc(item.body)}</p></li>`).join('')}</ul>`:'<p class="muted-copy">받은 알림이 없습니다.</p>';
+   const visible=items.filter(item=>!noticeApp(item)||noticeApp(item)===pushHistoryApp);
+   list.innerHTML=visible.length?`<ul class="seq-list push-history">${visible.map(item=>{
+    const app=noticeApp(item);
+    const [kind,...lines]=item.body.split('\n');
+    const showDepartment=app==='note'&&/(가입 승인 요청|시험일지 (추가|등록) 요청)/.test(kind);
+    const details=lines.filter(line=>showDepartment||!/^(?:담당\s*|소속\s*)?부서\s*:/.test(line));
+    return `<li class="seq-open"><time datetime="${new Date(item.receivedAt).toISOString()}">${esc(stamp(item.receivedAt))}</time>${app?'':'<small>출처 미확인</small>'}<strong>${esc(kind)}</strong>${details.length?`<p>${esc(details.join('\n'))}</p>`:''}</li>`;
+   }).join('')}</ul>`:'<p class="muted-copy">받은 알림이 없습니다.</p>';
   }catch{list.innerHTML='<p class="muted-copy">알림 내역을 불러올 수 없습니다.</p>'}
  }
  const PUSH_KEY='BPU0pPSzUgbnARC21YwjM7tZE7oJVPhD11_fgsYMUGLbS-jteO27kD-rYHVCmVUmbzA0M6fkGJTeyaHehAaxouc';

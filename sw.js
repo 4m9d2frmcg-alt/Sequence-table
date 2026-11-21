@@ -38,7 +38,7 @@ self.addEventListener('push',event=>{
   const tag=known?'ailab-notice-'+app+(Number.isSafeInteger(data.noticeId)?'-'+data.noticeId:''):'ailab-notice';
   const receivedAt=Date.now();
   const historyTag=known&&Number.isSafeInteger(data.noticeId)?tag:tag+'-'+crypto.randomUUID();
-  const saved=pushHistory({title,body,tag:historyTag,receivedAt}).then(async()=>{
+  const saved=pushHistory({app,title,body,tag:historyTag,receivedAt}).then(async()=>{
     for(const client of await self.clients.matchAll({type:'window'}))client.postMessage('sequence-notification-saved');
   }).catch(()=>{});
   event.waitUntil(Promise.all([self.registration.showNotification(title,{body,tag,icon:'icon-180.png'}),saved]));
