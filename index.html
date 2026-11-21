@@ -1133,9 +1133,9 @@ body .account-department-filter>.app-select {
   margin-top:0;
 }
 
-body .account-department-filter select {
-  min-width:200px;
-  width:auto;
+body .account-department-filter>:is(select,.app-select) {
+  width:min(calc(var(--sp-64) * 4), 100%);
+  color:var(--c-text);
 }
 
 /* Backup choices share form spacing; native checkboxes stay compact. */
@@ -1531,6 +1531,177 @@ dialog>button.ailab-dialog-x:hover {
   border-color:var(--c-danger-line);
   background:var(--c-danger-soft);
   color:var(--c-danger);
+}
+
+
+/* Request and trash lists */
+
+.list-controls {
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--sp-14) var(--sp-18);
+  align-items:end;
+  margin:var(--sp-20) 0;
+}
+
+.bulk-actions {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.row-selection {
+  display:inline-flex!important;
+  margin-right:var(--sp-12);
+  gap:var(--sp-6);
+}
+
+.list-controls [role=status] {
+  flex-basis:100%;
+}
+
+body .request-card {
+  background:var(--c-card);
+  border:1px solid var(--c-line);
+  border-radius:var(--r-lg);
+  box-shadow:none;
+}
+
+.request-card:has(.row-selection input:checked),
+body.dark .request-card:has(.row-selection input:checked) {
+  background:var(--c-primary-soft);
+  border-color:var(--c-line-strong);
+  color:var(--c-primary-text);
+  --context-text:var(--c-primary-text);
+  --context-sub:var(--c-primary-text);
+  --context-fill:var(--c-primary-soft);
+  --context-line:var(--c-line-strong);
+  --context-card:var(--c-primary-soft);
+}
+
+.ailab-list-head {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:var(--sp-12);
+}
+
+.ailab-list-head>h3 {
+  margin:0;
+  font-size:var(--fs-panel-title);
+  font-weight:var(--fw-strong);
+}
+
+.ailab-list-kinds {
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--sp-4);
+  padding:var(--sp-4);
+  border:1px solid var(--c-line);
+  border-radius:var(--r-md);
+  background:var(--c-block);
+}
+
+body .ailab-list-kinds>button {
+  min-height:var(--h-control);
+  padding:var(--sp-8) var(--sp-12);
+  border:1px solid transparent;
+  border-radius:var(--r-sm);
+  background:transparent;
+  color:var(--c-text-sub);
+  white-space:nowrap;
+  font-size:var(--fs-small);
+  font-weight:var(--fw-medium);
+}
+
+body .ailab-list-kinds>button.active {
+  color:var(--c-text);
+  font-weight:var(--fw-strong);
+}
+
+body .ailab-list-kinds:not(.ailab-seg)>button.active {
+  border-color:var(--c-line);
+  background:var(--c-card);
+}
+
+.list-controls .bulk-actions {
+  gap:var(--sp-8);
+  margin-left:auto;
+  justify-content:flex-end;
+}
+
+body .bulk-actions .list-delete {
+  border-color:var(--c-danger);
+  color:var(--c-text);
+}
+
+body .bulk-actions .list-restore {
+  border-color:var(--c-line-strong);
+  color:var(--c-primary-text);
+}
+
+.list-controls .date-field {
+  display:flex;
+  align-items:center;
+  gap:var(--sp-6);
+}
+
+body .list-controls .date-field>input[type=text],
+body .list-controls .date-field>button {
+  box-sizing:border-box;
+  height:var(--h-control);
+  min-height:var(--h-control);
+  margin:0;
+}
+
+body .list-controls .date-field>button {
+  display:inline-flex;
+  align-items:center;
+  white-space:nowrap;
+  flex:none;
+}
+
+.ailab-list-items {
+  display:grid;
+  gap:var(--sp-12);
+}
+
+.ailab-list-entry {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:var(--sp-12);
+  padding:var(--sp-16) var(--sp-18);
+}
+
+.ailab-list-entry h4 {
+  margin:var(--sp-6) 0;
+  font-size:var(--fs-card-title);
+  overflow-wrap:anywhere;
+}
+
+.ailab-list-entry .row-selection {
+  flex:none;
+  align-items:center;
+  margin:0;
+}
+
+.ailab-list-meta {
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--sp-4) var(--sp-12);
+}
+
+.ailab-list-meta,
+.ailab-list-entry small {
+  font-size:var(--fs-small);
+  color:var(--context-sub,var(--c-text-sub));
+}
+
+body .account-department-filter :is(.app-select-trigger,[role=option]) {
+  color:var(--c-text);
+  white-space:nowrap;
 }
 
 /* ===== shared/design/scrollbar.css ===== */
@@ -4605,57 +4776,6 @@ body.dark .admin-content textarea {
   flex:0 0 auto;
 }
 
-.trash-row {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:var(--sp-18);
-  padding:var(--sp-18) 0;
-  border-bottom:1px solid var(--c-line);
-}
-
-.trash-row>div {
-  min-width:0;
-}
-
-.trash-row h3 {
-  font-size:var(--fs-reading);
-  overflow-wrap:anywhere;
-  margin:var(--sp-8) 0;
-}
-
-.trash-row small {
-  font-size:var(--fs-tiny);
-  color:var(--c-text-sub);
-}
-
-/* 휴지통 완전 삭제(Admin): 컬럼 요청 현황과 같은 선택·전체 선택·선택 삭제 */
-.trash-bulk {
-  display:flex;
-  flex-wrap:wrap;
-  gap:var(--sp-8);
-  margin:var(--sp-12) 0 var(--sp-4);
-}
-
-.trash-row>.row-selection {
-  display:inline-flex;
-  align-items:center;
-  gap:var(--sp-6);
-  flex:none;
-  font-size:var(--fs-small);
-  color:var(--c-text-sub);
-}
-
-.trash-row>div {
-  flex:1;
-}
-
-.trash-actions {
-  display:flex;
-  gap:var(--sp-8);
-  flex:none;
-}
-
 .btn.danger-outline {
   border-color:var(--c-danger);
   color:var(--c-danger);
@@ -5813,27 +5933,6 @@ body.dark .connection-settings {
   line-height:1.8;
 }
 
-.logo-workbench {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:var(--sp-24);
-  align-items:start;
-}
-
-.logo-workbench>form {
-  min-width:0;
-}
-
-.logo-workbench>.logo-lookup {
-  margin-top:0;
-  border:0;
-  padding-top:0;
-}
-
-.logo-workbench .brandfetch-candidates {
-  grid-template-columns:1fr;
-}
-
 .logo-lookup {
   margin-top:var(--sp-24);
   border-top:1px solid var(--c-line);
@@ -5897,17 +5996,6 @@ body.dark .connection-settings {
 
 .brandfetch-candidate .btn {
   font-size:var(--fs-caption);
-}
-
-@media(max-width:1100px) {
-  .logo-workbench {
-    grid-template-columns:1fr;
-  }
-
-  .logo-workbench>.logo-lookup {
-    border-top:1px solid var(--c-line);
-    padding-top:var(--sp-12);
-  }
 }
 
 @media(max-width:700px) {
@@ -8620,15 +8708,6 @@ body #adminBody.settings-page-view>.connection-settings {
   margin-top:0;
 }
 
-body #adminBody.settings-page-view>.logo-workbench {
-  gap:var(--sp-20);
-}
-
-body #adminBody.settings-page-view .logo-workbench>.settings-block {
-  margin:0;
-  max-width:none;
-}
-
 body .settings-block.settings-admin-only {
   background:var(--c-band);
   border-color:var(--c-line);
@@ -8661,11 +8740,6 @@ body .settings-admin-only .tavily-credits {
 body .settings-admin-only .tavily-credits h3 {
   font-size:var(--fs-card-title);
   font-weight:var(--fw-strong);
-}
-
-body .settings-page-view .logo-lookup {
-  border:1px solid var(--c-line);
-  padding:var(--sp-24);
 }
 
 body .audit-filter-form {
@@ -11192,7 +11266,7 @@ body.dark .note-header-counts .positive-request-count {
   outline-offset:2px;
 }
 
-/* 관리자 모드 시험일지 등록 요청: 줄 사이를 띄우고(테두리 겹치지 않게), 제품·요청자·요청 내용을 진하게. [요청 삭제]는 내용 바로 옆 */
+/* 관리자 모드 시험일지 등록 요청: 줄 사이를 띄우고(테두리 겹치지 않게), 제품·요청자·요청 내용을 진하게. [요청 삭제]는 오른쪽 끝(요청 내용이 길어질 수 있음) */
 .journal-request-list {
   display:grid;
   gap:var(--sp-12);
@@ -11201,6 +11275,7 @@ body.dark .note-header-counts .positive-request-count {
 
 .journal-request-row {
   display:flex;
+  justify-content:space-between;
   align-items:center;
   gap:var(--sp-24);
   padding:var(--sp-14) var(--sp-18);
@@ -15041,9 +15116,20 @@ body.dark .run-curve-figure img {
 /* 관리자 모드 · 제품별 담당 실·시험일지 */
 .product-departments-bar {
   display:flex;
+  flex-wrap:wrap;
   align-items:center;
-  gap:var(--sp-16);
+  gap:var(--sp-8);
   margin:var(--sp-16) 0;
+}
+
+.product-departments-count {
+  margin-left:var(--sp-4);
+  color:var(--c-text-sub);
+  font-weight:var(--fw-regular);
+}
+
+.product-departments-bar>.btn[aria-pressed=true] .product-departments-count {
+  color:inherit;
 }
 
 .product-departments-bar>.btn[aria-pressed=true] {
@@ -15084,6 +15170,11 @@ body.dark .run-curve-figure img {
 
 .product-departments-table th:nth-child(3) {
   width:180px;
+}
+
+/* '담당 부서' 제목을 선택 상자 안 글자(바이오의약…·미지정) 시작점에 맞춤 */
+#adminBody .product-departments-table:not(.audit-table) th:nth-child(3) {
+  padding-left:calc(var(--sp-20) + var(--sp-18));
 }
 
 .product-departments-table th:nth-child(4) {
@@ -15137,6 +15228,9 @@ body.dark .run-curve-figure img {
 }
 
 .product-journal-version-head {
+  padding:var(--sp-10) var(--sp-14);
+  border-radius:var(--r-md);
+  background:var(--c-band);
   display:flex;
   flex-wrap:wrap;
   align-items:center;
@@ -15145,7 +15239,8 @@ body.dark .run-curve-figure img {
 
 .product-journal-version-head>h3 {
   margin:0;
-  font-size:var(--fs-card-title);
+  font-size:var(--fs-panel-title);
+  font-weight:var(--fw-strong);
 }
 
 .product-journal-version-head>small {
@@ -15311,7 +15406,9 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
  function segments(list){groups.push(...list);queue();if(watching)return;watching=true;const sel=()=>groups.map(g=>g.box).join(',');
   new MutationObserver(records=>{const s=sel();if(records.some(r=>{const n=r.target.nodeType===1?r.target:r.target.parentElement;/* 화면(페이지)이 보이거나 숨겨질 때도 다시 잰다 */if(r.attributeName==='hidden')return true;return n?.closest?.(s)||[...(r.addedNodes||[])].some(a=>a.nodeType===1&&(a.matches?.(s)||a.querySelector?.(s)))}))queue()}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','aria-pressed','aria-selected','hidden']});
   addEventListener('resize',queue)}
- window.AiLabMotion=Object.freeze({timing,reduced,ease,scrollTo,segments});
+ const animations=new WeakMap(),activeElements=new Set();
+ function enter(element){if(!element?.getClientRects().length||reduced())return;for(const other of [...activeElements])if(other!==element&&(other.contains(element)||element.contains(other))){animations.get(other)?.cancel();activeElements.delete(other)}animations.get(element)?.cancel();const a=element.animate([{opacity:.65},{opacity:1}],{...timing('base')});animations.set(element,a);activeElements.add(element);a.onfinish=a.oncancel=()=>{if(animations.get(element)===a){animations.delete(element);activeElements.delete(element)}}}
+ window.AiLabMotion=Object.freeze({timing,reduced,ease,scrollTo,segments,enter});
 })();
 
 /* 공통 팝업 닫기(×): 열린 <dialog>에 '닫기'·'취소' 버튼이 있으면 오른쪽 위(스크롤해도 고정)에 ×를 두고 누르면 그 버튼을 대신 누른다.
