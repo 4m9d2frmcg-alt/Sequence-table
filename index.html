@@ -1720,6 +1720,114 @@ body .account-department-filter :is(.app-select-trigger,[role=option]) {
   white-space:nowrap;
 }
 
+/* Search settings, account tables and backup cards share their layout. */
+body .api-connection.settings-admin-only>h3 {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:var(--sp-12);
+}
+
+.settings-admin-badge {
+  flex:none;
+  padding:var(--sp-4) var(--sp-8);
+  border:1px solid var(--c-line-strong);
+  border-radius:var(--r-sm);
+  background:var(--c-hierarchy-head);
+  color:var(--c-text);
+  font-size:var(--fs-tiny);
+  font-weight:var(--fw-strong);
+  line-height:var(--lh-heading);
+  white-space:nowrap;
+}
+
+body.dark .settings-admin-badge {
+  background:var(--c-band);
+  border-color:var(--c-line);
+}
+
+body .api-connection input[data-api-key] {
+  -webkit-text-security:disc;
+  font-family:inherit;
+  font-size:var(--fs-body);
+  font-weight:var(--fw-regular);
+}
+
+body .api-connection input[data-api-key]::placeholder {
+  -webkit-text-security:none;
+  font-family:inherit;
+  font-size:inherit;
+  font-weight:inherit;
+}
+
+body .ailab-backup-card>.actions {
+  margin:var(--sp-14) 0 0;
+  gap:var(--gap-control);
+  justify-content:flex-start;
+}
+
+body .ailab-backup-card .upload {
+  display:block;
+  padding:0;
+  border:0;
+  background:transparent;
+  margin:var(--sp-16) 0 0;
+}
+
+body .ailab-backup-card>p:not(:empty) {
+  margin:var(--sp-12) 0 0;
+  font-size:var(--fs-small);
+  line-height:1.75;
+  color:var(--c-text-sub);
+}
+
+body table.ailab-account-table {
+  table-layout:fixed;
+  min-width:calc(var(--sp-64) * 13);
+}
+
+body table.ailab-account-table:has(th:nth-child(5)) {
+  min-width:calc(var(--sp-64) * 19);
+}
+
+body .ailab-account-table th:nth-child(-n+2) {
+  width:calc(var(--sp-64) * 2);
+}
+
+body .ailab-account-table th:nth-child(3) {
+  width:calc(var(--sp-48) * 2);
+}
+
+body .ailab-account-table:has(th:nth-child(5)) th:nth-child(4) {
+  width:calc(var(--sp-64) * 7);
+}
+
+body .ailab-account-table :is(th,td):nth-child(-n+4) {
+  padding:var(--sp-12);
+  overflow-wrap:anywhere;
+}
+
+body .ailab-account-table td:nth-child(4) button {
+  margin:var(--sp-4);
+  white-space:nowrap;
+}
+
+
+body .ailab-backup-contents {
+  display:grid;
+  gap:var(--sp-6);
+  margin:0 0 var(--sp-16);
+  padding-left:var(--sp-20);
+  color:var(--c-text-sub);
+  font-size:var(--fs-small);
+  line-height:1.75;
+}
+
+body .ailab-backup-contents b {
+  color:var(--c-text);
+  font-weight:var(--fw-strong);
+}
+
 /* ===== shared/design/scrollbar.css ===== */
 /* 공통 스크롤바 (노트·컬럼 동일, 2026-11-12): 화살표 없는 둥근 얇은 막대, 평소 옅게·마우스 올리면 진하게. 숨겨 둔 상단 메뉴·도구 줄은 그대로 숨김. */
 
@@ -2455,12 +2563,6 @@ body .main-notice :is(#noticeText,.note-notice-content) {
   font-weight:var(--fw-regular);
   line-height:1.8;
   white-space:pre-wrap;
-}
-
-body .main-notice>summary .notice-updated {
-  margin:0 0 0 var(--sp-12);
-  font-size:var(--fs-caption);
-  color:var(--c-text-sub);
 }
 
 /* Single-choice controls share the catalog selection appearance. */
@@ -8726,20 +8828,6 @@ body .settings-block.settings-admin-only {
   color:var(--c-text);
 }
 
-.settings-admin-badge {
-  display:inline-flex;
-  align-items:center;
-  margin-left:var(--sp-10);
-  padding:var(--sp-4) var(--sp-8);
-  border:1px solid var(--c-line-strong);
-  border-radius:var(--r-sm);
-  background:var(--c-hierarchy-head);
-  color:var(--c-text);
-  font-size:var(--fs-tiny);
-  font-weight:var(--fw-strong);
-  vertical-align:middle;
-}
-
 body .settings-admin-only .tavily-credits {
   background:transparent;
   border:0;
@@ -9001,18 +9089,6 @@ body #page-admin .settings-section-heading>button {
 
 body #adminBody [data-account] {
   white-space:nowrap!important;
-}
-
-body #admin-accounts table {
-  min-width:680px;
-}
-
-body #adminBody:has([data-account]) .note-admin-table {
-  min-width:1100px;
-}
-
-body #adminBody:has([data-account]) .note-admin-table td:nth-child(3) {
-  min-width:300px;
 }
 
 body .settings-block .muted-copy {
@@ -9448,12 +9524,6 @@ body.dark {
 body.dark .settings-block.settings-admin-only {
   background:var(--c-hover);
   border-color:var(--c-line);
-}
-
-body.dark .settings-admin-badge {
-  background:var(--c-band);
-  border-color:var(--c-line);
-  color:var(--c-text);
 }
 
 body #mainNav>button,
@@ -10640,11 +10710,6 @@ body .note-draft-entry>.actions {
 }
 
 /* API credentials stay visually masked without acting as login passwords. */
-
-input[data-api-key] {
-  -webkit-text-security:disc;
-  font-family:monospace;
-}
 
 .connection-settings label {
   overflow-wrap:anywhere;
@@ -15762,14 +15827,14 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
  const baseSave=runSave;runSave=async function(testId,plan,scope='draft'){if(scope==='page'){const list=seqList();let entry=list.find(x=>x.id===testId);if(!entry){const name=await askName(plan);if(!name)return null;entry={id:testId,name};list.unshift(entry)}entry.updatedAt=new Date().toISOString();seqWrite(list);label.textContent=entry.name}return baseSave(testId,plan,scope)};
  const dialog=document.getElementById('seqDialog'),body=document.getElementById('seqDialogBody');
  function askName(plan){const first=String(plan?.rows?.find(r=>r.name&&r.kind!=='eq')?.name||'').replace(/_\d+$/,'');return new Promise(done=>{dialog.querySelector('h2').textContent='시퀀스 저장';body.innerHTML=`<form id="seqNameForm" class="seq-name-form"><label>검체명<input name="sample" required value="${esc(first)}" autocomplete="off"></label><label>시험법<input name="method" autocomplete="off"></label><div class="actions"><button class="btn btn-primary" type="submit">저장</button><button class="btn" type="button" data-cancel>취소</button></div></form>`;const form=body.querySelector('form');let result=null;form.onsubmit=e=>{e.preventDefault();const a=form.sample.value.trim(),b=form.method.value.trim();result=[a,b].filter(Boolean).join('_');dialog.close()};form.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>done(result),{once:true});dialog.showModal();form.sample.focus()})}
- function openList(first=false){const list=seqList();dialog.querySelector('h2').textContent='시퀀스 목록';body.innerHTML=`<div class="seq-list">${list.map(x=>`<div class="seq-row${x.id===page?' is-current':''}"><button type="button" class="seq-open" data-id="${esc(x.id)}"><strong>${esc(x.name)}</strong><small>${esc(stamp(x.updatedAt))}</small></button><button type="button" class="btn seq-delete" data-delete="${esc(x.id)}">삭제</button></div>`).join('')||'<p class="muted-copy">저장한 시퀀스가 없습니다.</p>'}</div><div class="actions"><button type="button" class="btn btn-primary" data-new>새 시퀀스</button><button type="button" class="btn" data-close>닫기</button></div>`;
+ function openList(){const list=seqList();dialog.querySelector('h2').textContent='시퀀스 목록';body.innerHTML=`<div class="seq-list">${list.map(x=>`<div class="seq-row${x.id===page?' is-current':''}"><button type="button" class="seq-open" data-id="${esc(x.id)}"><strong>${esc(x.name)}</strong><small>${esc(stamp(x.updatedAt))}</small></button><button type="button" class="btn seq-delete" data-delete="${esc(x.id)}">삭제</button></div>`).join('')||'<p class="muted-copy">저장한 시퀀스가 없습니다.</p>'}</div><div class="actions"><button type="button" class="btn btn-primary" data-new>새 시퀀스</button><button type="button" class="btn" data-close>닫기</button></div>`;
   body.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{dialog.close();show(b.dataset.id)});
   body.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{const entry=seqList().find(x=>x.id===b.dataset.delete);if(!entry||!confirm(`'${entry.name}' 시퀀스를 지울까요?`))return;seqWrite(seqList().filter(x=>x.id!==entry.id));Object.keys(localStorage).filter(k=>k.startsWith(KEY)&&k.endsWith('-'+entry.id)).forEach(k=>localStorage.removeItem(k));if(entry.id===page)show('seq-'+uid());openList()});
   body.querySelector('[data-new]').onclick=()=>{dialog.close();show('seq-'+uid())};body.querySelector('[data-close]').onclick=()=>dialog.close();if(!dialog.open)dialog.showModal()}
  document.getElementById('listBtn').onclick=()=>openList();
  /* 머리의 [저장] = 표 위 [저장](앱에서는 표 위 저장 버튼과 '시작' 글자를 숨김) */
  document.getElementById('saveBtn').onclick=()=>host.querySelector('[data-run-save]')?.click();
- show(page);if(seqList().length)openList(true);
+ show(page);if(seqList().length)openList();
  /* 실제 터치 화면의 텍스트 입력만 보정한다. 체크박스나 Fill down의 입력 이벤트는 제외한다. */
  let anchor=null;document.addEventListener('input',e=>{const el=e.target;
   if(e.isTrusted&&matchMedia('(pointer:coarse)').matches&&el===document.activeElement&&el.matches('.run-plan input[type=text],.run-plan input:not([type]),.run-plan textarea'))anchor={el,top:el.getBoundingClientRect().top};
