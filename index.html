@@ -15827,23 +15827,27 @@ Sample A_3</pre></div>
  let tappedCell=null;
  function bindTouchCell(input, select){
   if(input.type==='checkbox')return;
-  let firstTap=false;
-  input.addEventListener('pointerdown',event=>{
-   firstTap=event.pointerType==='touch'&&tappedCell!==input&&document.activeElement!==input;
-   if(firstTap)event.preventDefault();
-  });
-  input.addEventListener('pointercancel',()=>{firstTap=false});
-  input.addEventListener('click',event=>{
-   if(event.detail===0||(!firstTap&&tappedCell!==input))return;
-   if(firstTap){
-    firstTap=false;
-    tappedCell=input;
-    select();
-    runPopClose();
-    return;
-   }
-   if(document.activeElement!==input)input.focus({preventScroll:true});
-  });
+  let touch=null;
+  input.addEventListener('touchstart',event=>{
+   touch=event.touches.length===1&&tappedCell!==input&&document.activeElement!==input?event.changedTouches[0]:null;
+  },{passive:true});
+  const moved=point=>!point||Math.hypot(point.clientX-touch.clientX,point.clientY-touch.clientY)>10;
+  input.addEventListener('touchmove',event=>{
+   if(touch&&(event.touches.length!==1||moved(Array.from(event.touches).find(point=>point.identifier===touch.identifier))))touch=null;
+  },{passive:true});
+  input.addEventListener('touchcancel',()=>{touch=null},{passive:true});
+  // Cancel the first tap at touchend, before Safari can synthesize input focus.
+  input.addEventListener('touchend',event=>{
+   if(!touch)return;
+   const point=Array.from(event.changedTouches).find(point=>point.identifier===touch.identifier);
+   const tapped=!moved(point)&&event.touches.length===0;
+   touch=null;
+   if(!tapped||!event.cancelable)return;
+   event.preventDefault();
+   tappedCell=input;
+   select();
+   runPopClose();
+  },{passive:false});
  }
  function paintFillSource(){
   for(const row of host.querySelectorAll('[data-row]')){
