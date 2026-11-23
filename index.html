@@ -1108,7 +1108,7 @@ body .account-management-heading>.account-department-filter {
   gap:8px;
   margin:0;
   white-space:nowrap;
-  width:min(calc(var(--sp-64) * 4), 100%);
+  width:min(calc(var(--sp-64) * 5), 100%);
 }
 
 /* 계정 관리 제목 줄(두 앱 공통): [계정 관리] [부서 ▾] … [엑셀로 내보내기]를 한 줄 가운데 정렬 */
@@ -1746,8 +1746,13 @@ body .account-department-filter :is(.app-select-trigger,[role=option]) {
   white-space:nowrap;
 }
 
+body .account-department-filter .app-select-options {
+  overflow-x:hidden;
+}
+
 body .account-department-filter [role=option] {
   white-space:normal;
+  overflow-wrap:anywhere;
 }
 
 /* Search settings, account tables and backup cards share their layout. */
