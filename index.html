@@ -6335,11 +6335,11 @@ body #adminBody table.ailab-account-table {
 }
 
 body #adminBody .ailab-account-table th:nth-child(4) {
-  width:auto;
+  width:calc(var(--sp-64) * 8 + var(--sp-32));
 }
 
 body #adminBody .ailab-account-table th:nth-child(n+5) {
-  width:calc(var(--sp-64) + var(--sp-16));
+  text-align:center;
 }
 
 #adminBody .account-action-buttons {
@@ -14944,6 +14944,10 @@ from {
   flex-wrap:wrap;
 }
 
+.run-sequence-title {
+  white-space:pre-wrap;
+}
+
 .run-meta {
   font-size:var(--fs-caption);
   color:var(--c-text-sub);
@@ -15486,7 +15490,8 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
 .push-help .push-code{width:100%;box-sizing:border-box;font-family:ui-monospace,monospace;font-size:var(--fs-tiny);word-break:break-all;margin:var(--sp-8) 0}
 .solo-tools{display:flex;align-items:center;gap:var(--sp-6);flex-wrap:wrap;margin-top:var(--sp-8)}
 .solo-current{flex-basis:100%;font-size:var(--fs-small);color:var(--c-text-sub);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.solo-current b{color:var(--c-text);font-weight:var(--fw-strong)}
+.solo-current b{color:var(--c-text);font-weight:var(--fw-strong);white-space:pre}
+.seq-open strong{white-space:pre-wrap}
 .seq-list{display:grid;gap:var(--sp-6);margin-bottom:var(--sp-16)}
 .push-history-tabs{margin-bottom:var(--sp-12)}
 .push-history{list-style:none;padding:0;margin-top:0;max-height:48vh;overflow:auto}
@@ -15536,6 +15541,11 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;
 @container (max-width:999px){.solo-main .run-body{grid-template-columns:minmax(0,1fr)}.solo-main .run-main,.solo-main .run-side{min-width:0}.solo-main .run-summary-bar>*{min-width:0}.solo-main .run-toolbar,.solo-main .run-tool-group,.solo-main .run-toolbar>.run-start{flex-wrap:wrap}.solo-main .run-grid-wrap{max-width:100%;box-sizing:border-box}}
 /* 접은 화면 세로처럼 좁을 때: 바깥 여백·제목 줄 줄임 */
 @media (max-width:600px){.solo-main{padding-left:var(--sp-8);padding-right:var(--sp-8)}.solo-brand h1{font-size:var(--fs-card-title)}.solo-brand img{height:var(--sp-20)}}
+/* 세로 홈 화면에서 로고를 상태 줄 높이 가까이 올리되, 오른쪽 상태 아이콘 공간은 비운다. */
+@media (pointer:coarse) and (orientation:portrait){
+ body>.solo-head{display:block;padding:max(var(--sp-8),calc(env(safe-area-inset-top) - var(--sp-24))) calc(env(safe-area-inset-right) + var(--sp-16)) var(--sp-10) calc(env(safe-area-inset-left) + var(--sp-16))!important}
+ .solo-brand{padding-inline-end:clamp(0px,calc((env(safe-area-inset-top) - var(--sp-32)) * 3),calc(var(--sp-64) + var(--sp-24)))}
+}
 /* 가로로 눕혀 높이가 낮을 때(접은 가로 466·펼친 가로 626): 위 막대는 스크롤과 함께 올라가고 얇게, 안내 문구 숨김 */
 @media (max-height:700px) and (orientation:landscape){.solo-head{position:static;padding-top:var(--sp-6);padding-bottom:var(--sp-6)}.solo-main{padding-top:var(--sp-10)}}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + var(--sp-24));transform:translateX(-50%);z-index:50;padding:var(--sp-6) var(--sp-12);border-radius:var(--r-sm);background:var(--c-text);color:var(--c-card);font-size:var(--fs-caption);line-height:1.4;max-width:min(80vw,var(--sp-64)*5);width:max-content;text-align:center}
@@ -15709,7 +15719,7 @@ function pushHistory(notice) {
 
 
 window.RUN_PLAN_COMPACT=true;
-/* 노트 앱 대신: 사용자 1명, 이 기기에만 저장. 시퀀스마다 '검체명_시험법' 이름으로 따로 저장(노트의 시험법 페이지 하나 = 시퀀스 하나) */
+/* 노트 앱 대신: 사용자 1명, 이 기기에만 저장. 시퀀스마다 검체명과 시험법을 공백 두 칸으로 연결한 이름으로 저장(노트의 시험법 페이지 하나 = 시퀀스 하나) */
 const KEY='ailab-sequence',LIST_KEY=KEY+'-list',CURRENT_KEY=KEY+'-current';const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
@@ -15733,6 +15743,7 @@ function runOnServer(){return typeof serverReady!=='undefined'&&serverReady&&typ
 function runPageKey(testId){return `${KEY}-runplan-page-${testId}`}
 async function runLoad(testId){if(runOnServer())return serverApi('run-plan?test='+encodeURIComponent(testId));const draft=runRead(runStoreKey(testId));return {page:runRead(runPageKey(testId)),draft:draft&&draft.plan?draft:draft?{plan:draft,updatedAt:''}:null}}
 async function runSave(testId,plan,scope='draft'){if(runOnServer())return serverApi('run-plan','PUT',{test:testId,plan,scope});const at=new Date().toISOString(),by=user?.name||user?.id||'';if(scope==='page'){if(!runWrite(runPageKey(testId),{plan,updatedAt:at,by}))throw Error();try{localStorage.removeItem(runStoreKey(testId))}catch{}}else if(!runWrite(runStoreKey(testId),{plan,updatedAt:at}))throw Error();return {ok:true,updatedAt:at,by}}
+function runSequenceName(product,method){return [product,method].map(value=>String(value||'').trim()).filter(Boolean).join('  ')}
 function runSavedLabel(meta){if(!meta?.updatedAt)return '아직 페이지에 저장된 일정표가 없습니다.';const d=new Date(meta.updatedAt);return `최근 수정: ${meta.by||'—'} ${d.getFullYear()}.${runPad(d.getMonth()+1)}.${runPad(d.getDate())} ${runPad(d.getHours())}:${runPad(d.getMinutes())}`}
 function runPad(v){return String(v).padStart(2,'0')}
 function runNow(){const d=new Date();return {date:`${d.getFullYear()}-${runPad(d.getMonth()+1)}-${runPad(d.getDate())}`,time:`${runPad(d.getHours())}:${runPad(d.getMinutes())}`}}
@@ -15800,7 +15811,7 @@ function renderRunPlan(host){if(!renderRunPlan.methodMotion&&window.AiLabMotion)
  window.AiLabMotion.segments([{box:'.run-method-tabs',on:'button.is-active'}]);renderRunPlan.methodMotion=true;
 }const context=locate(page);if(context&&host.querySelector('.run-plan')?.dataset.test===context.t.id){/* 같은 시험법으로 다시 들어오면 칸 접기만 다시(이미 접어 둔 상태면 그대로) */if(!runBefore)runFoldPanels();return}/* 같은 시험법을 보고 있으면 다시 그리지 않는다(테마 변경·서버 동기화 중 입력 보존). */if(!context||context.t.samplePage){host.innerHTML='<div class="empty-product-state"><p>시험법을 선택하면 분석 일정표를 쓸 수 있습니다.</p></div>';return}
  runFoldPanels();
- const testId=context.t.id;let plan=null,activeMethod=null,focus=null,pointFocus=null,saveTimer=null,pageMeta=null,dirty=false,baseline='';
+ const testId=context.t.id,sequenceName=runSequenceName(context.s?.name,context.t.name);let plan=null,activeMethod=null,focus=null,pointFocus=null,saveTimer=null,pageMeta=null,dirty=false,baseline='';
  /* 이전으로·앞으로: 고친 뒤 잠깐 멈추면 표·Method 전체 상태를 한 단계로 기록(최대 100). */
  const history={list:[],at:-1,timer:0};
  const remember=()=>{clearTimeout(history.timer);history.timer=setTimeout(()=>{if(!plan)return;const s=JSON.stringify(plan);if(history.list[history.at]===s)return;history.list=history.list.slice(0,history.at+1);history.list.push(s);if(history.list.length>100)history.list.shift();history.at=history.list.length-1;historyButtons()},350)};
@@ -15808,7 +15819,7 @@ function renderRunPlan(host){if(!renderRunPlan.methodMotion&&window.AiLabMotion)
  const travel=step=>{clearTimeout(history.timer);const s=JSON.stringify(plan);if(history.list[history.at]!==s){history.list=history.list.slice(0,history.at+1);history.list.push(s);history.at=history.list.length-1}const to=history.at+step;if(to<0||to>=history.list.length)return;history.at=to;plan=JSON.parse(history.list[to]);if(!plan.methods.some(m=>m.id===activeMethod))activeMethod=plan.methods[0].id;focus=null;pointFocus=null;draw();historyButtons()};
  host.innerHTML=`<section class="run-plan" data-test="${esc(testId)}"><p class="run-note">분석 일정표를 불러오고 있습니다.</p></section>`;
  const status=()=>{const meta=host.querySelector('[data-run-meta]');if(meta)meta.textContent=runSavedLabel(pageMeta)};
- const persist=(now=false)=>{clearTimeout(saveTimer);saveTimer=null;if(now)return runSave(testId,plan,'page').then(res=>{if(!res)return false;pageMeta={updatedAt:res.updatedAt,by:res.by};baseline=JSON.stringify(plan);dirty=false;status();return true});const changed=JSON.stringify(plan)!==baseline;if(!changed&&!dirty)return;dirty=changed;status();if(!changed)return;saveTimer=setTimeout(()=>{saveTimer=null;runSave(testId,plan,'draft').catch(()=>toast('임시 저장하지 못했습니다. 연결을 확인해 주세요.'))},600)};
+ const persist=(now=false)=>{clearTimeout(saveTimer);saveTimer=null;if(now)return runSave(testId,runCompact()?plan:{...plan,name:sequenceName},'page').then(res=>{if(!res)return false;pageMeta={updatedAt:res.updatedAt,by:res.by};baseline=JSON.stringify(plan);dirty=false;status();return true});const changed=JSON.stringify(plan)!==baseline;if(!changed&&!dirty)return;dirty=changed;status();if(!changed)return;saveTimer=setTimeout(()=>{saveTimer=null;runSave(testId,plan,'draft').catch(()=>toast('임시 저장하지 못했습니다. 연결을 확인해 주세요.'))},600)};
  if(runCompact())host.flushRunDraft=()=>{
   if(saveTimer===null)return;
   clearTimeout(saveTimer);saveTimer=null;
@@ -15836,7 +15847,7 @@ function renderRunPlan(host){if(!renderRunPlan.methodMotion&&window.AiLabMotion)
    <a href="https://support.waters.com/KB_Inst/Chromatography/WKB99596_How_is_the_gradient_curve_composition_set_when_the_Curve_is_set_in_the_Inlet_Method" target="_blank" rel="noopener noreferrer">다른 지수 표기</a>
   </p></details>`}
 
- function draw(){runPopClose();host.innerHTML=`<section class="run-plan" data-test="${esc(testId)}"><div class="run-body"><div class="run-main"><div class="run-plan-head"><div class="run-title"><h2>주입 시간 및 이동상 소모량 계산</h2><span class="run-meta" data-run-meta>${esc(runSavedLabel(pageMeta))}</span></div></div>
+ function draw(){runPopClose();host.innerHTML=`<section class="run-plan" data-test="${esc(testId)}"><div class="run-body"><div class="run-main"><div class="run-plan-head"><div class="run-title"><h2 class="run-sequence-title">${esc(sequenceName||'주입 시간 및 이동상 소모량 계산')}</h2><span class="run-meta" data-run-meta>${esc(runSavedLabel(pageMeta))}</span></div></div>
   <div class="run-summary-bar"><div data-run-summary></div><div class="run-sst-box"><h4>주요 확인 시간</h4><div data-run-sst></div></div></div>
   <div class="run-toolbar"><div class="run-tool-group" role="group" aria-label="행 편집"><button type="button" class="btn" data-row-add>+ 행 추가</button><button type="button" class="btn" data-eq-add title="Waters EQ: 고른 Method의 첫 줄 조건으로 적은 분만큼 흐른 뒤 다음 행 분석 시작">EQ</button><button type="button" class="btn" data-fill-down title="선택한 칸의 내용을 아래 행에 모두 채웁니다 (Ctrl+D)">Fill down</button></div><div class="run-tool-group" role="group" aria-label="되돌리기"><button type="button" class="btn run-undo" data-run-undo title="이전으로 (Ctrl+Z)" aria-label="이전으로"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M7.5 5 3.5 9l4 4M4 9h7.5a4.5 4.5 0 0 1 0 9H9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="btn run-undo" data-run-redo title="앞으로 (Ctrl+Shift+Z)" aria-label="앞으로"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M12.5 5l4 4-4 4M16 9H8.5a4.5 4.5 0 0 0 0 9H11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="run-tool-group"><button type="button" class="btn" data-row-clear>전체 비우기</button></div><span class="run-spacer"></span><div class="run-start" role="group" aria-label="분석 시작"><span class="run-start-label">시작</span><input aria-label="시작 날짜" data-plan-field="date" value="${esc(runDateLabel(plan.date))}" placeholder="YYYY-MM-DD" autocomplete="off" inputmode="numeric"><input aria-label="시작 시간" data-plan-field="time" value="${esc(plan.time||'')}" placeholder="HH:MM" autocomplete="off" inputmode="numeric"><button type="button" class="btn" data-run-now title="시작 날짜·시간을 현재 시각으로">현재 시각</button></div><span class="run-save"><button type="button" class="btn btn-primary" data-run-save title="${runOnServer()?'이 시험법 페이지에 저장 · 모두 함께 봄':'이 브라우저에 저장(HTML)'}">저장</button></span></div>
   ${runCompact()?'':`<dialog class="run-repeat-dialog" data-repeat-dialog aria-label="Sample name 반복 입력">
@@ -16206,8 +16217,8 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
 (()=>{const dark=matchMedia('(prefers-color-scheme: dark)');const theme=()=>document.body.classList.toggle('dark',dark.matches);theme();dark.addEventListener('change',theme);
  const host=document.getElementById('tabContent'),label=document.getElementById('seqName'),stamp=v=>{const d=new Date(v);return isNaN(d)?'':`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const show=id=>{page=id;localStorage.setItem(CURRENT_KEY,id);host.innerHTML='';renderRunPlan(host);label.textContent=locate(id).t.name};
- /* [저장]: 처음 저장하는 시퀀스는 '검체명_시험법' 이름을 받아 목록에 넣는다 */
- const baseSave=runSave;runSave=async function(testId,plan,scope='draft'){if(scope==='page'){const list=seqList();let entry=list.find(x=>x.id===testId);if(!entry){const name=await askName(plan);if(!name)return null;entry={id:testId,name};list.unshift(entry)}entry.updatedAt=new Date().toISOString();seqWrite(list);label.textContent=entry.name}return baseSave(testId,plan,scope)};
+ /* [저장]: 처음 저장하는 시퀀스는 검체명과 시험법을 공백 두 칸으로 연결해 목록에 넣는다 */
+ const baseSave=runSave;runSave=async function(testId,plan,scope='draft'){if(scope==='page'){const list=seqList();let entry=list.find(x=>x.id===testId);if(!entry){const name=await askName();if(!name)return null;entry={id:testId,name};list.unshift(entry)}entry.updatedAt=new Date().toISOString();seqWrite(list);label.textContent=entry.name}return baseSave(testId,plan,scope)};
  const dialog=document.getElementById('seqDialog'),body=document.getElementById('seqDialogBody');
  const isBackdrop=event=>{
   if(event.target!==dialog)return false;
@@ -16221,7 +16232,7 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
   if(backdropDown&&isBackdrop(event)&&body.querySelector('[data-push-history]'))dialog.close();
   backdropDown=false;
  });
- function askName(plan){const first=String(plan?.rows?.find(r=>r.name&&r.kind!=='eq')?.name||'').replace(/_\d+$/,'');return new Promise(done=>{dialog.querySelector('h2').textContent='시퀀스 저장';body.innerHTML=`<form id="seqNameForm" class="seq-name-form"><label>검체명<input name="sample" required value="${esc(first)}" autocomplete="off"></label><label>시험법<input name="method" autocomplete="off"></label><div class="actions"><button class="btn btn-primary" type="submit">저장</button><button class="btn" type="button" data-cancel>취소</button></div></form>`;const form=body.querySelector('form');let result=null;form.onsubmit=e=>{e.preventDefault();const a=form.sample.value.trim(),b=form.method.value.trim();result=[a,b].filter(Boolean).join('_');dialog.close()};form.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>done(result),{once:true});dialog.showModal();form.sample.focus()})}
+ function askName(){return new Promise(done=>{dialog.querySelector('h2').textContent='시퀀스 저장';body.innerHTML=`<form id="seqNameForm" class="seq-name-form"><label>검체명<input name="sample" required autocomplete="off"></label><label>시험법<input name="method" autocomplete="off"></label><div class="actions"><button class="btn btn-primary" type="submit">저장</button><button class="btn" type="button" data-cancel>취소</button></div></form>`;const form=body.querySelector('form');let result=null;form.onsubmit=e=>{e.preventDefault();const a=form.sample.value.trim(),b=form.method.value.trim();result=a?runSequenceName(a,b):null;if(!result){form.sample.focus();return};dialog.close()};form.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>done(result),{once:true});dialog.showModal();form.sample.focus()})}
  const backupFormat='ailab-sequence-backup';
  const validSeqId=id=>typeof id==='string'&&/^seq-[\w-]+$/.test(id)&&id.length<=500;
  const isRecord=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
