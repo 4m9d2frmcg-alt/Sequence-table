@@ -1101,14 +1101,14 @@ body .journal-pane-heading h2 {
 
 /* 계정 관리: 부서별 보기(두 앱 공통). 글자는 가로 한 줄. */
 
-body .account-department-filter {
+body .account-management-heading>.account-department-filter {
   display:inline-flex;
   flex-direction:row;
   align-items:center;
   gap:8px;
   margin:0;
   white-space:nowrap;
-  width:auto;
+  width:min(calc(var(--sp-64) * 4), 100%);
 }
 
 /* 계정 관리 제목 줄(두 앱 공통): [계정 관리] [부서 ▾] … [엑셀로 내보내기]를 한 줄 가운데 정렬 */
@@ -1133,8 +1133,10 @@ body .account-department-filter>.app-select {
   margin-top:0;
 }
 
-body .account-department-filter>:is(select,.app-select) {
-  width:min(calc(var(--sp-64) * 4), 100%);
+body .account-management-heading>.account-department-filter>:is(select,.app-select) {
+  flex:1 1 auto;
+  min-width:0;
+  width:auto;
   color:var(--c-text);
 }
 
@@ -1742,6 +1744,10 @@ body .list-controls .date-field>button {
 body .account-department-filter :is(.app-select-trigger,[role=option]) {
   color:var(--c-text);
   white-space:nowrap;
+}
+
+body .account-department-filter [role=option] {
+  white-space:normal;
 }
 
 /* Search settings, account tables and backup cards share their layout. */
