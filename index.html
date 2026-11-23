@@ -14593,6 +14593,18 @@ tr:hover .run-icon,
   stroke-linecap:round;
 }
 
+.run-graph-now {
+  stroke:var(--c-sequence-now);
+  stroke-width:2;
+  vector-effect:non-scaling-stroke;
+  pointer-events:none;
+}
+
+.run-graph-now.is-drag {
+  stroke:var(--c-sequence-now-strong);
+  stroke-width:3;
+}
+
 .run-graph-line.run-graph-a {
   stroke:var(--c-chart-a);
 }
@@ -15698,7 +15710,7 @@ function runPointTotal(p){return RUN_CHANNELS.reduce((n,ch)=>n+runNum(p[ch]),0)}
 function runRowCount(name){const m=String(name||'').match(/\s[×x*]\s*(\d+)\s*$/i);return m?Math.max(1,Math.min(200,Number(m[1]))):1}
 /* EQ 행(Waters 대기): 고른 Method의 첫 줄 유속·조성으로 n분 흐른 뒤 다음 행 시작. 주입이 아니므로 번호·주입 횟수에 넣지 않는다. 분은 Sample name 칸(row.name)에 적는다. */
 function runEqMinutes(row){return Math.max(0,runNum(String(row?.name||'').replace(/[^\d.]/g,'')))}
-function runCompute(plan){const stats=new Map(plan.methods.map(m=>[runKey(m.name),runMethodStats(m)])),byName=new Map(plan.methods.map(m=>[runKey(m.name),m])),start=new Date(`${plan.date}T${plan.time||'00:00'}`);let clock=isNaN(start)?null:start.getTime(),index=1,minutes=0;const use={a:0,b:0,c:0,d:0},rows=plan.rows.map(row=>{if(row.kind==='eq'){const m=byName.get(runKey(row.method)),p0=runPoints(m)[0],mins=runEqMinutes(row),out={id:row.id,eq:true,index,count:0,begin:clock,known:!!m||!row.method,minutes:mins};minutes+=mins;if(p0)for(const ch of RUN_CHANNELS)use[ch]+=p0.flow*p0[ch]/100*mins;if(clock!==null){clock+=mins*60000;out.end=clock;out.firstEnd=clock}return out}const s=stats.get(runKey(row.method)),count=runRowCount(row.name),out={id:row.id,index,count,begin:clock,known:!!s||!row.method};index+=count;if(s){minutes+=s.minutes*count;for(const ch of RUN_CHANNELS)use[ch]+=s.use[ch]*count}if(clock!==null){clock+=(s?.minutes||0)*count*60000;out.end=clock;out.firstEnd=out.begin+(s?.minutes||0)*60000}return out});return {rows,total:index-1,minutes,use,end:clock,startDay:isNaN(start)?null:new Date(start).setHours(0,0,0,0)}}
+function runCompute(plan){const stats=new Map(plan.methods.map(m=>[runKey(m.name),runMethodStats(m)])),byName=new Map(plan.methods.map(m=>[runKey(m.name),m])),start=new Date(`${plan.date}T${plan.time||'00:00'}`);let clock=isNaN(start)?null:start.getTime(),index=1,minutes=0;const use={a:0,b:0,c:0,d:0},rows=plan.rows.map(row=>{if(row.kind==='eq'){const m=byName.get(runKey(row.method)),p0=runPoints(m)[0],mins=runEqMinutes(row),out={id:row.id,method:row.method,eq:true,index,count:0,begin:clock,known:!!m||!row.method,minutes:mins};minutes+=mins;if(p0)for(const ch of RUN_CHANNELS)use[ch]+=p0.flow*p0[ch]/100*mins;if(clock!==null){clock+=mins*60000;out.end=clock;out.firstEnd=clock}return out}const s=stats.get(runKey(row.method)),count=runRowCount(row.name),out={id:row.id,method:row.method,index,count,begin:clock,known:!!s||!row.method};index+=count;if(s){minutes+=s.minutes*count;for(const ch of RUN_CHANNELS)use[ch]+=s.use[ch]*count}if(clock!==null){clock+=(s?.minutes||0)*count*60000;out.end=clock;out.firstEnd=out.begin+(s?.minutes||0)*60000}return out});return {rows,total:index-1,minutes,use,end:clock,startDay:isNaN(start)?null:new Date(start).setHours(0,0,0,0)}}
 const RUN_WEEK=['일','월','화','수','목','금','토'];
 function runDateLabel(value){const m=String(value||'').match(/\d{4}-\d{2}-\d{2}/);if(!m)return String(value||'');const d=new Date(m[0]+'T00:00');return isNaN(d)?m[0]:`${m[0]} (${RUN_WEEK[d.getDay()]})`}
 function runDateOnly(value){return String(value||'').match(/\d{4}-\d{2}-\d{2}/)?.[0]||String(value||'').trim()}
@@ -15718,7 +15730,7 @@ function runGradientSvg(m,reveal=false){const raw=runPoints(m),pts=raw.slice(0,1
  /* 가로 눈금 = 입력한 시간(대기 포함 끝). 글자가 겹치면 그 눈금의 숫자만 생략. */const ticks=[...new Set([...raw.map(p=>p.t),end])].sort((a,b)=>a-b);let lastX=-99;const xt=ticks.map(v=>{const px=x(v),show=px-lastX>=18||v===end;if(show)lastX=px;return `<line x1="${px}" y1="${T}" x2="${px}" y2="${H-B}" class="run-graph-grid"/>${show?`<text x="${px}" y="${H-B+14}" text-anchor="middle">${fmt(v)}</text>`:''}`}).join('');
  const grid=[0,25,50,75,100].map(v=>`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" class="run-graph-grid"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join('')+xt+`<text x="${L-6}" y="${T-8}" text-anchor="end" class="run-graph-unit">(%)</text><text x="${W-2}" y="${H-B+14}" text-anchor="end" class="run-graph-unit">(min)</text>`;
  const lines=used.map(ch=>`<polyline class="run-graph-line run-graph-${ch}" points="${pts.map(p=>`${x(p.t).toFixed(1)},${y(p[ch]).toFixed(1)}`).join(' ')}"/>`).join('');
- const clip='run-clip-'+String(m.id||'m').replace(/[^\w-]/g,'');return `<figure class="run-graph"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc((m.name||'Method')+' 기울기: 가로 분석시간 0~'+fmt(end)+'분, 세로 이동상 %, '+used.map(c=>c.toUpperCase()).join('·'))}">${grid}<defs><clipPath id="${clip}"><rect class="${reveal?'run-graph-reveal':''}" x="0" y="0" width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#${clip})">${lines}</g></svg><figcaption>${used.map(ch=>`<span class="run-graph-key run-graph-${ch}">${ch.toUpperCase()}</span>`).join('')}</figcaption></figure>`}
+ const clip='run-clip-'+String(m.id||'m').replace(/[^\w-]/g,'');return `<figure class="run-graph"><svg viewBox="0 0 ${W} ${H}" role="img" data-run-graph-method="${esc(runKey(m.name))}" aria-label="${esc((m.name||'Method')+' 기울기: 가로 분석시간 0~'+fmt(end)+'분, 세로 이동상 %, '+used.map(c=>c.toUpperCase()).join('·'))}">${grid}<defs><clipPath id="${clip}"><rect class="${reveal?'run-graph-reveal':''}" x="0" y="0" width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#${clip})">${lines}</g><line class="run-graph-now" data-run-graph-now data-minutes="${end}" data-left="${L}" data-right="${W-R}" y1="${T}" y2="${H-B}" visibility="hidden"/></svg><figcaption>${used.map(ch=>`<span class="run-graph-key run-graph-${ch}">${ch.toUpperCase()}</span>`).join('')}</figcaption></figure>`}
 function runClock(ms){if(ms===null||ms===undefined)return '—';const d=new Date(ms);return `${runPad(d.getHours())}:${runPad(d.getMinutes())}`}
 function runSpan(minutes){const h=Math.floor(minutes/60),m=Math.round(minutes%60);return h?`${h}시간 ${m}분`:`${m}분`}
 function runMl(v){return `${(Math.round(v*10)/10).toLocaleString('ko-KR')} mL`}
@@ -15793,12 +15805,27 @@ Sample A_3</pre></div>
   const snapped=Math.round((top+y)*scale)/scale-top;
   line.style.transform=`translateY(${snapped}px)`;
  }
- function markNow(r=runCompute(plan)){const sheet=host.querySelector('.run-sheet'),line=host.querySelector('.run-now-line');if(!sheet||!line)return;const now=Date.now(),byId=new Map(r.rows.map(x=>[x.id,x]));let target=null;
-  host.querySelectorAll('[data-row]').forEach(tr=>{const x=byId.get(tr.dataset.row),on=!!x&&x.begin!=null&&x.end>x.begin&&now>=x.begin&&now<x.end;tr.classList.toggle('is-now',on);if(on){const box=tr.getBoundingClientRect(),top=sheet.getBoundingClientRect().top;target=box.top-top+sheet.scrollTop+(now-x.begin)/(x.end-x.begin)*box.height}});
+ function markGradientNow(slot,time,dragging=false){
+  const graph=host.querySelector('[data-run-graph-method]'),marker=graph?.querySelector('[data-run-graph-now]');
+  if(!marker)return;
+  const visible=slot&&slot.method&&runKey(slot.method)===graph.dataset.runGraphMethod&&slot.end>slot.begin;
+  marker.setAttribute('visibility',visible?'visible':'hidden');
+  if(!visible)return;
+  const duration=(slot.end-slot.begin)/Math.max(1,slot.count);
+  const elapsed=Math.max(0,time-slot.begin);
+  const minutes=slot.eq?0:(elapsed>=slot.end-slot.begin?duration:elapsed%duration)/60000;
+  const {minutes:axis,left,right}=marker.dataset;
+  const x=Number(left)+Math.min(1,minutes/Number(axis))*(Number(right)-Number(left));
+  marker.setAttribute('x1',x);marker.setAttribute('x2',x);
+  marker.classList.toggle('is-drag',dragging);
+ }
+ function markNow(r=runCompute(plan)){const sheet=host.querySelector('.run-sheet'),line=host.querySelector('.run-now-line');if(!sheet||!line)return;const now=Date.now(),byId=new Map(r.rows.map(x=>[x.id,x]));let target=null,activeRow=null;
+  host.querySelectorAll('[data-row]').forEach(tr=>{const x=byId.get(tr.dataset.row),on=!!x&&x.begin!=null&&x.end>x.begin&&now>=x.begin&&now<x.end;tr.classList.toggle('is-now',on);if(on){activeRow=x;const box=tr.getBoundingClientRect(),top=sheet.getBoundingClientRect().top;target=box.top-top+sheet.scrollTop+(now-x.begin)/(x.end-x.begin)*box.height}});
   const table=host.querySelector('.run-table'),head=table.querySelector('thead')?.getBoundingClientRect().height||0,past=host.querySelector('.run-past'),lastEnd=r.rows.at(-1)?.end;
   /* 이미 끝난 주입(줄 위쪽)은 얇은 회색 유리로 덮는다. */
   if(past){past.style.width=table.offsetWidth+'px';past.style.top=head+'px';const h=target!==null?target-head:(lastEnd!=null&&now>=lastEnd?table.offsetHeight-head:0);requestAnimationFrame(()=>{past.style.height=Math.max(0,h)+'px'})}
-  if(target===null){line.hidden=true;return}line.style.width=table.offsetWidth+'px';if(!line.classList.contains('is-drag'))line.querySelector('.run-now-time').textContent=line.classList.contains('is-hover')?runClock(now):'NOW';
+  if(!line.classList.contains('is-drag'))markGradientNow(activeRow,now);
+  if(target===null){if(!line.classList.contains('is-drag'))line.hidden=true;return}line.style.width=table.offsetWidth+'px';if(!line.classList.contains('is-drag'))line.querySelector('.run-now-time').textContent=line.classList.contains('is-hover')?runClock(now):'NOW';
   if(line.hidden||line.dataset.placed!=='true'){line.hidden=false;line.dataset.placed='true';line.style.transition='none';placeNowLine(line,sheet,nowY??head);line.getBoundingClientRect();line.style.transition=''}
   nowY=target;if(line.classList.contains('is-drag'))return;requestAnimationFrame(()=>{placeNowLine(line,sheet,target)})}
  function update(){const r=runCompute(plan),byId=new Map(r.rows.map(x=>[x.id,x]));requestAnimationFrame(()=>markNow(r));
@@ -15963,11 +15990,12 @@ Sample A_3</pre></div>
   /* 빨간 선: 평소엔 NOW, 선 가까이 마우스를 올리면 현재 시각. 끌어 위아래로 옮기면 새빨개지며 그 위치의 예상 시각, 놓으면 현재 위치로 돌아간다. */
   const hover=on=>{if(nowLine.classList.contains('is-drag'))return;nowLine.classList.toggle('is-hover',on);nowTag.textContent=on?runClock(Date.now()):'NOW'};
   sheet.addEventListener('mousemove',e=>{if(nowLine.hidden||nowY==null)return;const y=e.clientY-sheet.getBoundingClientRect().top+sheet.scrollTop;hover(Math.abs(y-nowY)<=6)});sheet.addEventListener('mouseleave',()=>hover(false));
-  const timeAt=y=>{const r=runCompute(plan),byId=new Map(r.rows.map(x=>[x.id,x])),top=sheet.getBoundingClientRect().top-sheet.scrollTop;for(const tr of host.querySelectorAll('[data-row]')){const x=byId.get(tr.dataset.row),box=tr.getBoundingClientRect(),a=box.top-top,b=a+box.height;if(x?.begin==null||x.end==null||y<a||y>b)continue;return x.begin+(y-a)/Math.max(1,box.height)*(x.end-x.begin)}return null};
+  let dragRows;
+  const timeAt=y=>{const top=sheet.getBoundingClientRect().top-sheet.scrollTop;for(const tr of host.querySelectorAll('[data-row]')){const x=dragRows.get(tr.dataset.row),box=tr.getBoundingClientRect(),a=box.top-top,b=a+box.height;if(x?.begin==null||x.end==null||y<a||y>b)continue;return {row:x,time:x.begin+(y-a)/Math.max(1,box.height)*(x.end-x.begin)}}return null};
   const stamp=ms=>{if(ms==null)return '—';const d=new Date(ms),today=new Date();return d.toDateString()===today.toDateString()?runClock(ms):`${runPad(d.getMonth()+1)}.${runPad(d.getDate())} ${runClock(ms)}`};
   const grip=nowLine.querySelector('.run-now-grip');
-  const dragTo=e=>{const table=host.querySelector('.run-table'),head=table.querySelector('thead').getBoundingClientRect().height,y=Math.max(head,Math.min(table.offsetHeight,e.clientY-sheet.getBoundingClientRect().top+sheet.scrollTop));placeNowLine(nowLine,sheet,y);nowTag.textContent=stamp(timeAt(y));const past=host.querySelector('.run-past');if(past){past.style.transition='none';past.style.height=Math.max(0,y-head)+'px'}};
-  for(const el of [grip,nowTag]){el.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();el.setPointerCapture(e.pointerId);nowLine.classList.remove('is-hover');nowLine.classList.add('is-drag');nowLine.style.transition='none';dragTo(e)});
+  const dragTo=e=>{const table=host.querySelector('.run-table'),head=table.querySelector('thead').getBoundingClientRect().height,y=Math.max(head,Math.min(table.offsetHeight,e.clientY-sheet.getBoundingClientRect().top+sheet.scrollTop));placeNowLine(nowLine,sheet,y);const point=timeAt(y);nowTag.textContent=stamp(point?.time);markGradientNow(point?.row,point?.time,true);const past=host.querySelector('.run-past');if(past){past.style.transition='none';past.style.height=Math.max(0,y-head)+'px'}};
+  for(const el of [grip,nowTag]){el.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();el.setPointerCapture(e.pointerId);dragRows=new Map(runCompute(plan).rows.map(row=>[row.id,row]));nowLine.classList.remove('is-hover');nowLine.classList.add('is-drag');nowLine.style.transition='none';dragTo(e)});
    el.addEventListener('pointermove',e=>{if(nowLine.classList.contains('is-drag'))dragTo(e)});
    const drop=()=>{if(!nowLine.classList.contains('is-drag'))return;nowLine.classList.remove('is-drag');nowLine.style.transition='';nowTag.textContent='NOW';const past=host.querySelector('.run-past');if(past)past.style.transition='';if(nowY!=null)placeNowLine(nowLine,sheet,nowY);markNow()};
    el.addEventListener('pointerup',drop);el.addEventListener('pointercancel',drop)}
