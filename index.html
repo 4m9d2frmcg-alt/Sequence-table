@@ -1867,6 +1867,89 @@ body .ailab-backup-contents b {
   font-weight:var(--fw-strong);
 }
 
+/* ===== 디자인 일체화(2026-11-27): 같은 역할 = 같은 모양. 두 앱 모든 화면·팝업 점검 결과를 한 곳에서 맞춘다 ===== */
+
+/* 보조 버튼: 회색 바탕·14px·보통 굵기(흰 바탕·12px 굵은 글씨 변형을 없앰). 머리 도구 버튼(.tools·.top-actions)은 머리 전용 모양 유지 */
+html body :is(main,dialog,#extra,.page,.card) :is(.actions,.dialog-actions,.bar,.outbound-actions,.date-field,.ailab-digest-section)>button:not(.primary):not(.btn-primary):not(.danger):not(.danger-outline):not(.dialog-extra):not([aria-pressed=true]):not(.active),
+html body #addOutbound {
+  background:var(--c-block);
+  border-color:var(--c-line);
+  color:var(--c-text);
+  font-size:var(--fs-body);
+  font-weight:var(--fw-medium);
+}
+
+/* 알림 창 버튼도 다른 버튼과 같은 높이 */
+html body .ailab-digest-section>button {
+  height:var(--h-control);
+  min-height:var(--h-control);
+}
+
+/* 입력칸: 회색 바탕·14px (팝업 안·내 정보·노트 관리자 입력칸·컬럼 검색 칸 포함). 큰 통합 검색칸(#fGrid)과 노트 머리 검색칸은 따로 */
+html body :is(main,dialog,#extra,.page) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not(#fGrid):not(#globalSearch),textarea,select:not(.app-select-native)) {
+  background-color:var(--c-block);
+  font-size:var(--fs-body);
+}
+
+html body .app-select-trigger {
+  font-size:var(--fs-body);
+}
+
+/* 표 제목 줄: 12px·굵게·본문 글자색(연한 회색 글씨·13px·아주 굵은 글씨 변형을 없앰) */
+html body table thead th {
+  font-size:var(--fs-caption)!important;
+  font-weight:var(--fw-strong)!important;
+  color:var(--c-text)!important;
+}
+
+/* 블록 그림자 하나로(노트 내 정보 블록 포함) */
+html body :is(.settings-block,.profile-settings-block,main .card:not(.usage-trial-card)):not([class*=transparent]) {
+  box-shadow:0 2px 6px #14202c04;
+}
+
+/* 팝업: 안쪽 여백 24px, 제목 18px·아래 18px */
+html body .ailab-digest {
+  padding:var(--sp-24);
+}
+
+html body dialog[open] h2:first-of-type,
+html body .attachment-dialog h2,
+html body .ailab-digest>h2 {
+  font-size:var(--fs-panel-title)!important;
+  margin-bottom:var(--sp-18);
+}
+
+/* 블록 제목 아래 간격 18px(한 줄에 다른 것과 놓인 제목은 0 유지) */
+html body :is(.settings-block,.profile-settings-block)>:is(h2,h3),
+html body .profile-password-title {
+  margin-bottom:var(--sp-18)!important;
+}
+
+/* 여러 버튼이 붙어 있을 때 간격 */
+html body :is(.actions,.dialog-actions,.bulk-actions,.outbound-actions,.trash-actions,.product-journal-buttons) {
+  gap:var(--sp-8);
+}
+
+/* 컬럼 등록 상태 조회 검색 칸도 다른 입력칸처럼 회색 바탕 */
+html body #page-inventory :is(#fMgmt,#fName,#fPn,#fResource,#fItem,#fNote,#fLot) {
+  background-color:var(--c-block)!important;
+}
+
+/* 팝업 안 입력칸 안쪽 여백 12px */
+html body dialog :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),textarea) {
+  padding-left:var(--sp-12);
+  padding-right:var(--sp-12);
+}
+
+/* 요청 현황 '직접 추가'·반출 수정/삭제·목록 새로고침 버튼 높이 36px */
+html body :is(.bar,.outbound-actions,.account-row)>button,
+html body #addOutbound {
+  height:var(--h-control);
+  min-height:var(--h-control);
+  padding-top:0;
+  padding-bottom:0;
+}
+
 /* ===== shared/design/scrollbar.css ===== */
 /* 공통 스크롤바 (노트·컬럼 동일, 2026-11-12): 화살표 없는 둥근 얇은 막대, 평소 옅게·마우스 올리면 진하게. 숨겨 둔 상단 메뉴·도구 줄은 그대로 숨김. */
 
