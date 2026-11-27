@@ -905,7 +905,6 @@ body .actions>button,
 body .actions>.btn,
 body .usage-pagination>button,
 body .title-actions>.btn,
-body .journal-placement-tools>.btn,
 body .landing-title-row>.btn,
 body .selection-grid .journal-import-trigger,
 body .selection-grid .catalog-add,
@@ -926,25 +925,6 @@ body .profile-form .actions>.btn,
 body .usage-review-pagination>button {
   padding-top:0!important;
   padding-bottom:0!important;
-}
-
-/* LIMS와 앱 기록이 다를 때 관리자 안내(요청 현황 위) */
-
-body .lims-mismatch {
-  margin:0 0 14px;
-  padding:10px 14px;
-  border:1px solid #f1cdb4;
-  border-radius:var(--r-md);
-  background:#fff4ec;
-  color:#8a4420;
-  font-size:var(--fs-small);
-  line-height:1.6;
-}
-
-body.dark .lims-mismatch {
-  background:#38271f;
-  border-color:#6e4630;
-  color:#f0b48f;
 }
 
 /* 내 정보: 로그인 유지 선택 */
@@ -1064,7 +1044,6 @@ body #landing .choice .choice-name {
 body .actions>button,
 body .actions>.btn,
 body .journal-placement-trigger,
-body .journal-placement-tools>.btn,
 body .journal-version-button,
 body .journal-version-arrow {
   display:inline-flex;
@@ -1075,8 +1054,7 @@ body .journal-version-arrow {
   box-sizing:border-box;
 }
 
-body .journal-placement-trigger,
-body .journal-placement-tools>.btn {
+body .journal-placement-trigger {
   height:var(--h-control);
   min-height:var(--h-control);
   padding:0 12px;
@@ -1085,8 +1063,7 @@ body .journal-placement-tools>.btn {
   white-space:nowrap;
 }
 
-body .journal-placement-trigger>span,
-body .journal-placement-tools>.btn>span {
+body .journal-placement-trigger>span {
   margin:0;
   line-height:var(--lh-control);
 }
@@ -2247,7 +2224,6 @@ body #page-usage .usage-trial-code {
 /* 노트: 선택 목록과 읽기 화면에서 제목·내용·보조 정보를 구분한다. */
 
 body #landing .landing-title-row {
-  align-items:center;
   gap:16px;
   margin-bottom:16px;
 }
@@ -2599,7 +2575,24 @@ body .note-notice-content {
   padding-top:12px;
 }
 
-/* Shared header rows keep the logo and navigation stationary between apps. */
+/* Shared header rows and logo dimensions. */
+
+body>header :is(.header-logo-light,.header-logo-dark),
+body .topbar :is(.header-light,.header-dark) {
+  width:210px;
+  height:36px;
+  flex:0 0 210px;
+  object-fit:contain;
+}
+
+@media(max-width:700px) {
+  body>header :is(.header-logo-light,.header-logo-dark),
+  body .topbar :is(.header-light,.header-dark) {
+    width:125px;
+    height:26px;
+    flex-basis:125px;
+  }
+}
 
 body>header:has(>.header-brand-row),
 body .app>.topbar,
@@ -2654,8 +2647,7 @@ body>header>.header-request-counts>strong {
 /* Hover identifies interactive cards consistently; static panels stay still. */
 
 body .all-note-entry,
-body .request-card,
-body .choice-types>label {
+body .request-card {
   transition:border-color var(--t-fast) var(--ease);
 }
 
@@ -5441,13 +5433,6 @@ body.dark .left {
   white-space:nowrap;
 }
 
-:is(.topbar .header-light,.topbar .header-dark) {
-  width:210px;
-  height:36px;
-  flex:0 0 210px;
-  object-fit:contain;
-}
-
 .brand-title {
   display:flex;
   align-items:center;
@@ -5528,11 +5513,6 @@ body.dark .left {
 }
 
 @media(min-width:701px) and (max-width:1200px) {
-  :is(.topbar .header-light,.topbar .header-dark) {
-    width:210px;
-    flex-basis:210px;
-  }
-
   .brand-title {
     font-size:var(--fs-reading);
   }
@@ -5551,12 +5531,6 @@ body.dark .left {
     grid-column:1;
     grid-row:1;
     gap:var(--sp-10);
-  }
-
-  :is(.topbar .header-light,.topbar .header-dark) {
-    width:125px;
-    height:26px;
-    flex-basis:125px;
   }
 
   .brand-title {
@@ -5620,13 +5594,6 @@ body.dark .left {
   .topbar>.brand {
     grid-column:1;
     grid-row:1;
-  }
-
-  /* PC 창(701px 이상)에서는 로고를 컬럼과 같은 210×36으로 둔다(좁은 창에서 작아지던 문제) */
-  .topbar :is(.header-light,.header-dark) {
-    width:210px;
-    height:36px;
-    flex-basis:210px;
   }
 
   .brand-title {
@@ -10071,7 +10038,8 @@ body dialog.image-edit-dialog {
   gap:var(--sp-14);
 }
 
-body a.suggestions-link {
+body a.legacy-placement-link {
+  margin-right:var(--sp-12);
   display:inline;
   text-decoration:underline;
   text-underline-offset:3px;
@@ -10083,15 +10051,9 @@ body a.suggestions-link {
   cursor:pointer;
 }
 
-.suggestions-link:focus-visible {
+.legacy-placement-link:focus-visible {
   outline:2px solid var(--blue,var(--c-primary));
   outline-offset:4px;
-}
-
-/* 기존 노트 위치 지정: 건의사항과 간격(글씨·색은 건의사항처럼 이름 표시에서 복사) */
-
-body a.legacy-placement-link {
-  margin-right:var(--sp-12);
 }
 
 @media(max-width:700px) {
@@ -12825,34 +12787,6 @@ body.dark .journal-version-button .journal-version-count {
   font-size:var(--fs-body);
   font-weight:var(--fw-regular);
   color:var(--c-text);
-}
-
-.journal-placement-tools {
-  display:flex;
-  align-items:center;
-  gap:var(--sp-8);
-  margin:0 0 var(--sp-14);
-}
-
-.journal-placement-tools[hidden] {
-  display:none!important;
-}
-
-.journal-placement-tools .btn {
-  height:var(--h-control);
-  min-height:var(--h-control);
-  font-size:var(--fs-body);
-  font-weight:var(--fw-medium);
-}
-
-.journal-placement-tools .btn span {
-  color:var(--c-primary);
-  margin-left:var(--sp-8);
-  font-weight:var(--fw-strong);
-}
-
-body.dark .journal-placement-tools .btn span {
-  color:var(--c-primary-text);
 }
 
 .legacy-placement-dialog {
