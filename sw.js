@@ -39,8 +39,7 @@ self.addEventListener('push',event=>{
   const known=Boolean(appLabel);
   const body=known&&typeof data.body==='string'&&data.body.trim()?data.body.trim():'새 요청이 있습니다.';
   const [kind,...details]=body.split('\n');
-  const shortKind=app==='note'&&kind==='가입 승인 요청'?'가입 승인':kind;
-  const title=known?appLabel+' - '+(kind==='새 요청이 있습니다.'?'새 요청':shortKind):'새 알림';
+  const title=known?appLabel+' · '+(kind==='새 요청이 있습니다.'?'새 요청':kind):'새 알림';
   const displayBody=known?details.join('\n'):body;
   const tag=known?'ailab-notice-'+app+(Number.isSafeInteger(data.noticeId)?'-'+data.noticeId:''):'ailab-notice';
   const receivedAt=Date.now();
