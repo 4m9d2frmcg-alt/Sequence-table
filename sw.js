@@ -1,7 +1,11 @@
 /* 인터넷 없이도 열리게: 연결되면 항상 새 파일을 받고(받은 파일은 기기에 보관), 연결이 없으면 보관한 파일로 연다. 내용이 바뀌지 않는 파일이라 다시 올릴 필요 없음 */
-const CACHE='sequence-v1.01',FILES=['./','index.html','manifest.webmanifest','icon-180.png','icon-512.png'];
+const CACHE='sequence-v1.11',FILES=['./','index.html','manifest.webmanifest','icon-180.png','icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+const FLAGS='sequence-flags';
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k!==FLAGS).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+/* 내용 없는 알림 = 앱허브가 이 코드로 내용을 암호화하지 못함 → 앱을 열면 코드 다시 등록 팝업 */
+async function flagRecode(){await (await caches.open(FLAGS)).put('recode',new Response('1'));for(const client of await self.clients.matchAll({type:'window'}))client.postMessage('sequence-recode')}
+self.addEventListener('pushsubscriptionchange',event=>event.waitUntil(flagRecode()));
 
 function pushHistory(notice) {
   return new Promise((resolve, reject) => {
@@ -47,7 +51,7 @@ self.addEventListener('push',event=>{
   const saved=pushHistory({app,title,body,tag:historyTag,receivedAt}).then(async()=>{
     for(const client of await self.clients.matchAll({type:'window'}))client.postMessage('sequence-notification-saved');
   }).catch(()=>{});
-  event.waitUntil(Promise.all([self.registration.showNotification(title,{body:displayBody,tag,icon:'icon-180.png'}),saved]));
+  event.waitUntil(Promise.all([self.registration.showNotification(title,{body:displayBody,tag,icon:'icon-180.png'}),saved,known?null:flagRecode().catch(()=>{})]));
 });
 self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.matchAll({type:'window'}).then(list=>list[0]?list[0].focus():clients.openWindow('./')))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request,{ignoreSearch:true}).then(r=>r||caches.match('index.html'))))});
