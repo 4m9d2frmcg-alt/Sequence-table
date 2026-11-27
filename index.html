@@ -4274,6 +4274,10 @@ body.dark {
   position:relative;
 }
 
+.topbar:has(#globalResults:not([hidden])) {
+  z-index:20;
+}
+
 #globalResults {
   position:absolute;
   right:0;
@@ -11549,6 +11553,12 @@ body.dark .note-header-counts .positive-request-count {
   body .app>.topbar>.global-search {
     grid-column:1;
     grid-row:2;
+  }
+
+  #globalResults {
+    right:auto;
+    left:0;
+    max-width:calc(100vw - 2 * var(--sp-24));
   }
 
   .note-header-counts {
