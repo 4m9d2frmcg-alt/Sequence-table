@@ -16309,9 +16309,8 @@ function syncRunPlanButton(){const button=document.getElementById('runPlanBtn');
 (()=>{const dark=matchMedia('(prefers-color-scheme: dark)');const theme=()=>document.body.classList.toggle('dark',dark.matches);theme();dark.addEventListener('change',theme);
  const host=document.getElementById('tabContent'),label=document.getElementById('seqName'),stamp=v=>{const d=new Date(v);return isNaN(d)?'':`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const show=id=>{page=id;localStorage.setItem(CURRENT_KEY,id);host.innerHTML='';renderRunPlan(host);label.textContent=locate(id).t.name};
- /* [저장]: 처음 저장하는 시퀀스는 검체명과 시험법을 공백 두 칸으로 연결해 목록에 넣는다.
-    혼자 쓰는 앱이라 이름이 붙은 시퀀스는 바뀔 때마다(0.6초 뒤) 그대로 저장한다. 새 시퀀스는 처음 [저장] 때까지 임시본 */
- const baseSave=runSave;runSave=async function(testId,plan,scope='draft'){if(scope==='draft'&&seqList().some(x=>x.id===testId))scope='page';if(scope==='page'){const list=seqList();let entry=list.find(x=>x.id===testId);if(!entry){const name=await askName();if(!name)return null;entry={id:testId,name};list.unshift(entry)}entry.updatedAt=new Date().toISOString();seqWrite(list);label.textContent=entry.name}return baseSave(testId,plan,scope)};
+ /* [저장]: 처음 저장하는 시퀀스는 검체명과 시험법을 공백 두 칸으로 연결해 목록에 넣는다 */
+ const baseSave=runSave;runSave=async function(testId,plan,scope='draft'){if(scope==='page'){const list=seqList();let entry=list.find(x=>x.id===testId);if(!entry){const name=await askName();if(!name)return null;entry={id:testId,name};list.unshift(entry)}entry.updatedAt=new Date().toISOString();seqWrite(list);label.textContent=entry.name}return baseSave(testId,plan,scope)};
  const dialog=document.getElementById('seqDialog'),body=document.getElementById('seqDialogBody');
  const isBackdrop=event=>{
   if(event.target!==dialog)return false;
